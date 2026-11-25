@@ -454,6 +454,50 @@ class _AdOptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textScale = MediaQuery.textScalerOf(context).scale(14.0) / 14.0;
+    final stackButton = textScale > 1.3;
+
+    final infoRow = Row(
+      children: <Widget>[
+        ExcludeSemantics(
+          child: Icon(icon, color: accent, size: 28),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: MergeSemantics(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+
+    final actionButton = CyberOutlineButton(
+      label: rewardLabel,
+      height: 48,
+      accentColor: accent,
+      semanticLabel: 'Watch $title for $rewardLabel',
+      onPressed: onTap,
+    );
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -461,46 +505,22 @@ class _AdOptionTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.borderSubtle),
       ),
-      child: Row(
-        children: <Widget>[
-          ExcludeSemantics(
-            child: Icon(icon, color: accent, size: 28),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: MergeSemantics(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
+      child: stackButton
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                infoRow,
+                const SizedBox(height: 10),
+                actionButton,
+              ],
+            )
+          : Row(
+              children: <Widget>[
+                Expanded(child: infoRow),
+                const SizedBox(width: 8),
+                actionButton,
+              ],
             ),
-          ),
-          const SizedBox(width: 8),
-          CyberOutlineButton(
-            label: rewardLabel,
-            height: 48,
-            accentColor: accent,
-            semanticLabel: 'Watch $title for $rewardLabel',
-            onPressed: onTap,
-          ),
-        ],
-      ),
     );
   }
 }

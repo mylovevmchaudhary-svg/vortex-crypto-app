@@ -18,7 +18,6 @@ void main() {
   testWidgets('renders all 6 pages on mobile screen with a11y guidelines',
       (WidgetTester tester) async {
     final handle = tester.ensureSemantics();
-    addTearDown(handle.dispose);
 
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1.0;
@@ -66,6 +65,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Anti-Bot & KYC Airdrop Readiness'), findsOneWidget);
     await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+
+    handle.dispose();
   });
 
   testWidgets('renders cleanly at 2.0x text scale across all 6 tabs',
