@@ -180,8 +180,8 @@ class AirdropScreen extends StatelessWidget {
             child: LinearProgressIndicator(
               value: state.globalPoolProgress,
               minHeight: 10,
-              semanticsLabel: '1 Billion coin airdrop pool progress',
-              semanticsValue: '$pct percent distributed',
+              semanticsLabel:
+                  '1 Billion coin airdrop pool progress ($pct percent distributed)',
               backgroundColor: AppColors.bgPrimary,
               valueColor: const AlwaysStoppedAnimation<Color>(AppColors.gold),
             ),

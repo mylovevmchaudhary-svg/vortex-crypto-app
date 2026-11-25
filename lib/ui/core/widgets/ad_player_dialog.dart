@@ -168,7 +168,6 @@ class _RewardedAdPlayerDialogState extends State<_RewardedAdPlayerDialog> {
                       value: progress,
                       minHeight: 8,
                       semanticsLabel: 'Ad playback progress',
-                      semanticsValue: '${(progress * 100).round()}%',
                       backgroundColor: AppColors.bgPrimary,
                       valueColor: AlwaysStoppedAnimation<Color>(
                         isComplete ? AppColors.success : AppColors.gold,
