@@ -140,9 +140,9 @@ class ProfileScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          const Semantics(
+          Semantics(
             header: true,
-            child: Text(
+            child: const Text(
               'Anti-Bot & KYC Airdrop Readiness',
               style: TextStyle(
                 fontWeight: FontWeight.w800,

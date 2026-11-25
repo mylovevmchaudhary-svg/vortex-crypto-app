@@ -185,9 +185,9 @@ class HomeScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    const Semantics(
+                    Semantics(
                       header: true,
-                      child: Text(
+                      child: const Text(
                         'Cloud Mining Node',
                         style: TextStyle(
                           fontSize: 17,
@@ -499,9 +499,9 @@ class HomeScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          const Semantics(
+          Semantics(
             header: true,
-            child: Text(
+            child: const Text(
               'Your Earning Sources',
               style: TextStyle(
                 fontWeight: FontWeight.w700,

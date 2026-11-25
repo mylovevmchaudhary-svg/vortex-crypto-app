@@ -115,7 +115,7 @@ class AppShell extends StatelessWidget {
           children: <Widget>[
             const VortexCoinEmblem(size: 36),
             const SizedBox(width: 10),
-            Expanded(
+            const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
@@ -123,7 +123,7 @@ class AppShell extends StatelessWidget {
                     spacing: 6,
                     runSpacing: 4,
                     crossAxisAlignment: WrapCrossAlignment.center,
-                    children: const <Widget>[
+                    children: <Widget>[
                       Text(
                         TokenConfig.coinName,
                         style: TextStyle(
@@ -138,7 +138,7 @@ class AppShell extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const Text(
+                  Text(
                     '1B Coin Airdrop Pre-Launch',
                     style: TextStyle(
                       fontSize: 11.5,

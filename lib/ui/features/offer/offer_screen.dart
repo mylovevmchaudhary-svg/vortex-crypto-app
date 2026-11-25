@@ -34,7 +34,7 @@ class OfferScreen extends StatelessWidget {
               const SizedBox(height: 18),
               _buildDailyStreakCard(context, state),
               const SizedBox(height: 18),
-              SectionHeader(
+              const SectionHeader(
                 title: 'Offerwall & Verified Tasks',
                 subtitle:
                     'Earn extra ${TokenConfig.coinSymbol} toward your 1B Airdrop tier',
@@ -88,9 +88,9 @@ class OfferScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          const Semantics(
+          Semantics(
             header: true,
-            child: Text(
+            child: const Text(
               'Rewarded Video Ad Center',
               style: TextStyle(
                 fontSize: 18,
@@ -145,10 +145,10 @@ class OfferScreen extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              const Expanded(
+              Expanded(
                 child: Semantics(
                   header: true,
-                  child: Text(
+                  child: const Text(
                     '7-Day Check-In Streak',
                     style: TextStyle(
                       fontSize: 16,

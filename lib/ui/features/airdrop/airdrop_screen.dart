@@ -423,9 +423,9 @@ class AirdropScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          const Semantics(
+          Semantics(
             header: true,
-            child: Text(
+            child: const Text(
               'Real BEP-20 Tokenomics (2B Supply)',
               style: TextStyle(
                 fontWeight: FontWeight.w800,

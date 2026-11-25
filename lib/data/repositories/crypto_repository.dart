@@ -226,7 +226,7 @@ class CryptoRepository extends ChangeNotifier {
     }
 
     final currentTime = _clock();
-    final reward = TokenConfig.tapRewardAmount;
+    const reward = TokenConfig.tapRewardAmount;
     final nextTapCount = _state.tapsToday + 1;
 
     // Group tap logs only every 10 taps to keep ledger clean, while crediting balance instantly.
@@ -519,7 +519,7 @@ class CryptoRepository extends ChangeNotifier {
     }
 
     final currentTime = _clock();
-    final bonus = TokenConfig.instantReferralBonus;
+    const bonus = TokenConfig.instantReferralBonus;
     final newMember = ReferralMember(
       id: 'ref_${currentTime.millisecondsSinceEpoch}',
       displayName: trimmed,

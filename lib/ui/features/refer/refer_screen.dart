@@ -213,9 +213,9 @@ class _ReferScreenState extends State<ReferScreen> {
             alignment: WrapAlignment.spaceBetween,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: <Widget>[
-              const Semantics(
+              Semantics(
                 header: true,
-                child: Text(
+                child: const Text(
                   'Airdrop Referral Milestones',
                   style: TextStyle(
                     fontWeight: FontWeight.w800,
@@ -300,9 +300,9 @@ class _ReferScreenState extends State<ReferScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          const Semantics(
+          Semantics(
             header: true,
-            child: Text(
+            child: const Text(
               'Have a Sponsor Invite Code?',
               style: TextStyle(
                 fontWeight: FontWeight.w700,

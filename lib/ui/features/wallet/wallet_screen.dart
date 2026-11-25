@@ -208,9 +208,9 @@ class _WalletScreenState extends State<WalletScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          const Semantics(
+          Semantics(
             header: true,
-            child: Text(
+            child: const Text(
               'Bind Receiving Wallet (BEP-20)',
               style: TextStyle(
                 fontWeight: FontWeight.w800,
@@ -369,9 +369,9 @@ class _WalletScreenState extends State<WalletScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          const Semantics(
+          Semantics(
             header: true,
-            child: Text(
+            child: const Text(
               'Smart Contract Specs (BNB Smart Chain)',
               style: TextStyle(
                 fontWeight: FontWeight.w800,
