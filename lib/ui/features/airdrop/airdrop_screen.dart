@@ -232,85 +232,97 @@ class AirdropScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        ...items.map(
-          (item) => Padding(
+        ...items.map((item) {
+          final textScale = MediaQuery.textScalerOf(context).scale(14.0) / 14.0;
+          final stackAction = textScale > 1.3;
+
+          final infoBlock = MergeSemantics(
+            child: Row(
+              children: <Widget>[
+                ExcludeSemantics(
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: (item.isMet ? AppColors.success : AppColors.gold)
+                          .withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      item.isMet
+                          ? Icons.check_circle
+                          : Icons.radio_button_unchecked,
+                      color: item.isMet ? AppColors.success : AppColors.gold,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        item.title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        item.subtitle,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+
+          final actionWidget = item.isMet
+              ? StatusPill(
+                  label: item.multiplierBonus,
+                  color: AppColors.success,
+                )
+              : CyberOutlineButton(
+                  label: 'Go',
+                  height: 48,
+                  accentColor: AppColors.goldBright,
+                  semanticLabel: 'Go to ${item.title}',
+                  onPressed: () => onNavigateTab(item.targetTabIndex),
+                );
+
+          return Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: GlassCard(
               padding: const EdgeInsets.all(14),
               borderColor: item.isMet
                   ? AppColors.success.withValues(alpha: 0.4)
                   : AppColors.borderSubtle,
-              child: Row(
-                children: <Widget>[
-                  Expanded(
-                    child: MergeSemantics(
-                      child: Row(
-                        children: <Widget>[
-                          ExcludeSemantics(
-                            child: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: (item.isMet
-                                        ? AppColors.success
-                                        : AppColors.gold)
-                                    .withValues(alpha: 0.14),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(
-                                item.isMet
-                                    ? Icons.check_circle
-                                    : Icons.radio_button_unchecked,
-                                color: item.isMet
-                                    ? AppColors.success
-                                    : AppColors.gold,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                Text(
-                                  item.title,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 14,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  item.subtitle,
-                                  style: Theme.of(context).textTheme.bodyMedium,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  if (item.isMet)
-                    StatusPill(
-                      label: item.multiplierBonus,
-                      color: AppColors.success,
+              child: stackAction
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        infoBlock,
+                        const SizedBox(height: 10),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: actionWidget,
+                        ),
+                      ],
                     )
-                  else
-                    CyberOutlineButton(
-                      label: 'Go',
-                      height: 48,
-                      accentColor: AppColors.goldBright,
-                      semanticLabel: 'Go to ${item.title}',
-                      onPressed: () => onNavigateTab(item.targetTabIndex),
+                  : Row(
+                      children: <Widget>[
+                        Expanded(child: infoBlock),
+                        const SizedBox(width: 8),
+                        actionWidget,
+                      ],
                     ),
-                ],
-              ),
             ),
-          ),
-        ),
+          );
+        }),
       ],
     );
   }

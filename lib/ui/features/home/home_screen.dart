@@ -99,12 +99,14 @@ class HomeScreen extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
-                          Text(
-                            '${(poolProgress * 100).toStringAsFixed(1)}% of 1B Pool',
-                            style: const TextStyle(
-                              color: AppColors.goldBright,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
+                          Flexible(
+                            child: Text(
+                              '${(poolProgress * 100).toStringAsFixed(1)}% of 1B Pool',
+                              style: const TextStyle(
+                                color: AppColors.goldBright,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 2),

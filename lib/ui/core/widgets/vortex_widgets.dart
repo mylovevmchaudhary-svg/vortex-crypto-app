@@ -60,8 +60,15 @@ class GlassCard extends StatelessWidget {
       return Container(
         margin: margin,
         decoration: decoration,
-        padding: padding,
-        child: child,
+        child: Material(
+          type: MaterialType.transparency,
+          borderRadius: BorderRadius.circular(borderRadius),
+          clipBehavior: Clip.antiAlias,
+          child: Padding(
+            padding: padding,
+            child: child,
+          ),
+        ),
       );
     }
 
@@ -72,19 +79,22 @@ class GlassCard extends StatelessWidget {
         container: true,
         label: semanticLabel,
         child: MergeSemantics(
-          child: Material(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(borderRadius),
-            child: InkWell(
-              onTap: onTap,
-              focusColor: AppColors.cyan.withValues(alpha: 0.18),
+          child: Container(
+            decoration: decoration,
+            child: Material(
+              type: MaterialType.transparency,
               borderRadius: BorderRadius.circular(borderRadius),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 48),
-                child: Container(
-                  decoration: decoration,
-                  padding: padding,
-                  child: child,
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: onTap,
+                focusColor: AppColors.cyan.withValues(alpha: 0.18),
+                borderRadius: BorderRadius.circular(borderRadius),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 48),
+                  child: Padding(
+                    padding: padding,
+                    child: child,
+                  ),
                 ),
               ),
             ),
@@ -488,27 +498,33 @@ class TokenomicsDonutChart extends StatelessWidget {
         child: CustomPaint(
           painter: _DonutChartPainter(slices: slices),
           child: const Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Text(
-                  '2.0B',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                  ),
+            child: Padding(
+              padding: EdgeInsets.all(22),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(
+                      '2.0B',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      'TOTAL SUPPLY',
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.6,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
                 ),
-                Text(
-                  'TOTAL SUPPLY',
-                  style: TextStyle(
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.6,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),

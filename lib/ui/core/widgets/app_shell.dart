@@ -108,96 +108,120 @@ class AppShell extends StatelessWidget {
   Widget _buildTopHeader(BuildContext context, double balanceVtx) {
     final balanceText =
         '${AppFormatters.formatTokens(balanceVtx, decimals: 1)} ${TokenConfig.coinSymbol}';
-    return FocusTraversalGroup(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
-        child: Row(
-          children: <Widget>[
-            const VortexCoinEmblem(size: 36),
-            const SizedBox(width: 10),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 4,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: <Widget>[
-                      Text(
-                        TokenConfig.coinName,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      StatusPill(
-                        label: TokenConfig.networkShort,
-                        color: AppColors.cyan,
-                      ),
-                    ],
-                  ),
+    final textScale = MediaQuery.textScalerOf(context).scale(13.0) / 13.0;
+    final stackHeader = textScale > 1.35;
+
+    final brandBlock = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        const VortexCoinEmblem(size: 36),
+        const SizedBox(width: 10),
+        Flexible(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: const <Widget>[
                   Text(
-                    '1B Coin Airdrop Pre-Launch',
+                    TokenConfig.coinName,
                     style: TextStyle(
-                      fontSize: 11.5,
-                      color: AppColors.textSecondary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
                     ),
+                  ),
+                  StatusPill(
+                    label: TokenConfig.networkShort,
+                    color: AppColors.cyan,
                   ),
                 ],
               ),
+              const Text(
+                '1B Coin Airdrop Pre-Launch',
+                style: TextStyle(
+                  fontSize: 11.5,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    final balanceChip = Semantics(
+      button: true,
+      label: 'Open Wallet, balance $balanceText',
+      excludeSemantics: true,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+        child: InkWell(
+          onTap: () => onSelectTab(4),
+          focusColor: AppColors.cyan.withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
             ),
-            const SizedBox(width: 8),
-            Semantics(
-              button: true,
-              label: 'Open Wallet, balance $balanceText',
-              excludeSemantics: true,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                child: Center(
-                  child: InkWell(
-                    onTap: () => onSelectTab(4),
-                    focusColor: AppColors.cyan.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceElevated,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: AppColors.gold.withValues(alpha: 0.45),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          const Icon(
-                            Icons.monetization_on,
-                            color: AppColors.goldBright,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            balanceText,
-                            style: const TextStyle(
-                              color: AppColors.goldBright,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceElevated,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: AppColors.gold.withValues(alpha: 0.45),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                const Icon(
+                  Icons.monetization_on,
+                  color: AppColors.goldBright,
+                  size: 16,
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    balanceText,
+                    style: const TextStyle(
+                      color: AppColors.goldBright,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
+      ),
+    );
+
+    return FocusTraversalGroup(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+        child: stackHeader
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  brandBlock,
+                  const SizedBox(height: 6),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: balanceChip,
+                  ),
+                ],
+              )
+            : Row(
+                children: <Widget>[
+                  Expanded(child: brandBlock),
+                  const SizedBox(width: 8),
+                  balanceChip,
+                ],
+              ),
       ),
     );
   }
