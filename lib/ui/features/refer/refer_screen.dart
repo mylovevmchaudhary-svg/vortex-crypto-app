@@ -59,6 +59,66 @@ class _ReferScreenState extends State<ReferScreen> {
   }
 
   Widget _buildInviteHeroCard(BuildContext context, UserCryptoState state) {
+    final textScale = MediaQuery.textScalerOf(context).scale(14.0) / 14.0;
+    final stackControls = textScale > 1.3;
+
+    final codeInfo = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        const Text(
+          'YOUR INVITE CODE',
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.6,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          state.referralCode,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.0,
+            color: AppColors.goldBright,
+          ),
+        ),
+      ],
+    );
+
+    final copyCodeButton = CyberOutlineButton(
+      label: 'Copy Code',
+      icon: Icons.copy,
+      height: 48,
+      accentColor: AppColors.goldBright,
+      semanticLabel: 'Copy invite code ${state.referralCode}',
+      onPressed: () => _copyText(
+        context,
+        state.referralCode,
+        'Referral code ${state.referralCode} copied!',
+      ),
+    );
+
+    final copyLinkButton = GoldGradientButton(
+      label: 'Copy Invite Link',
+      icon: Icons.share,
+      onPressed: () => _copyText(
+        context,
+        widget.viewModel.inviteLink,
+        'Invite link copied! Share on Telegram or WhatsApp.',
+      ),
+    );
+
+    final testInviteButton = CyberOutlineButton(
+      label: 'Test Invite',
+      icon: Icons.person_add_alt_1,
+      height: 52,
+      accentColor: AppColors.cyan,
+      semanticLabel: 'Simulate friend joining with invite code',
+      onPressed: () => _showSimulateInviteDialog(context),
+    );
+
     return GlassCard(
       gradient: AppColors.heroCardGradient,
       borderColor: AppColors.cyan.withValues(alpha: 0.45),
@@ -92,75 +152,36 @@ class _ReferScreenState extends State<ReferScreen> {
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: AppColors.borderHighlight),
             ),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            child: stackControls
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
-                      const Text(
-                        'YOUR INVITE CODE',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.6,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        state.referralCode,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.0,
-                          color: AppColors.goldBright,
-                        ),
-                      ),
+                      codeInfo,
+                      const SizedBox(height: 10),
+                      copyCodeButton,
+                    ],
+                  )
+                : Row(
+                    children: <Widget>[
+                      Expanded(child: codeInfo),
+                      const SizedBox(width: 8),
+                      copyCodeButton,
                     ],
                   ),
-                ),
-                const SizedBox(width: 8),
-                CyberOutlineButton(
-                  label: 'Copy Code',
-                  icon: Icons.copy,
-                  height: 48,
-                  accentColor: AppColors.goldBright,
-                  semanticLabel: 'Copy invite code ${state.referralCode}',
-                  onPressed: () => _copyText(
-                    context,
-                    state.referralCode,
-                    'Referral code ${state.referralCode} copied!',
-                  ),
-                ),
-              ],
-            ),
           ),
           const SizedBox(height: 12),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: GoldGradientButton(
-                  label: 'Copy Invite Link',
-                  icon: Icons.share,
-                  onPressed: () => _copyText(
-                    context,
-                    widget.viewModel.inviteLink,
-                    'Invite link copied! Share on Telegram or WhatsApp.',
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              CyberOutlineButton(
-                label: 'Test Invite',
-                icon: Icons.person_add_alt_1,
-                height: 52,
-                accentColor: AppColors.cyan,
-                semanticLabel: 'Simulate friend joining with invite code',
-                onPressed: () => _showSimulateInviteDialog(context),
-              ),
-            ],
-          ),
+          if (stackControls) ...<Widget>[
+            copyLinkButton,
+            const SizedBox(height: 10),
+            testInviteButton,
+          ] else
+            Row(
+              children: <Widget>[
+                Expanded(child: copyLinkButton),
+                const SizedBox(width: 10),
+                testInviteButton,
+              ],
+            ),
         ],
       ),
     );
