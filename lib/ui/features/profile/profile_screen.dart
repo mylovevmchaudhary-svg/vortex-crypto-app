@@ -450,36 +450,69 @@ class _CheckRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textScale = MediaQuery.textScalerOf(context).scale(13.0) / 13.0;
+    final stackValue = textScale > 1.3;
+
+    final statusValue = Text(
+      value,
+      textAlign: stackValue ? TextAlign.start : TextAlign.end,
+      style: TextStyle(
+        fontSize: 12.5,
+        fontWeight: FontWeight.w700,
+        color: passed ? AppColors.success : AppColors.warning,
+      ),
+    );
+
     return MergeSemantics(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(
+          crossAxisAlignment: stackValue
+              ? CrossAxisAlignment.start
+              : CrossAxisAlignment.center,
           children: <Widget>[
             ExcludeSemantics(
-              child: Icon(
-                passed ? Icons.check_circle : Icons.pending_outlined,
-                size: 18,
-                color: passed ? AppColors.success : AppColors.warning,
+              child: Padding(
+                padding: EdgeInsets.only(top: stackValue ? 2 : 0),
+                child: Icon(
+                  passed ? Icons.check_circle : Icons.pending_outlined,
+                  size: 18,
+                  color: passed ? AppColors.success : AppColors.warning,
+                ),
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w700,
-                color: passed ? AppColors.success : AppColors.warning,
-              ),
+              child: stackValue
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          label,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        statusValue,
+                      ],
+                    )
+                  : Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: Text(
+                            label,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(child: statusValue),
+                      ],
+                    ),
             ),
           ],
         ),
