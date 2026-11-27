@@ -105,7 +105,12 @@ class _ReferScreenState extends State<ReferScreen> {
       label: 'Share Invite Link',
       icon: Icons.share,
       onPressed: () async {
-        await Share.share(widget.viewModel.shareMessage);
+        await SharePlus.instance.share(
+          ShareParams(
+            text: widget.viewModel.shareMessage,
+            subject: 'Join ${TokenConfig.coinName} (${TokenConfig.coinSymbol})',
+          ),
+        );
       },
     );
 

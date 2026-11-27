@@ -60,7 +60,8 @@ jobs:
           if os.path.exists(app_gradle):
               with open(app_gradle, "r") as f:
                   g = f.read()
-              g = re.sub(r"minSdk\s*=\s*flutter\.minSdkVersion", "minSdk = 23", g)
+              g = re.sub(r"minSdk\s*=\s*flutter\.minSdkVersion", "minSdk = 24", g)
+              g = re.sub(r"minSdk\s*=\s*\d+", "minSdk = 24", g)
               with open(app_gradle, "w") as f:
                   f.write(g)
 
