@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -224,8 +226,8 @@ class HomeScreen extends StatelessWidget {
     final miningActive = state.miningActive;
     final isBoosted = viewModel.isBoostActive;
     final textScale = MediaQuery.textScalerOf(context).scale(14.0) / 14.0;
-    final orbSize = 178.0 * textScale.clamp(1.0, 1.55);
-    final innerSize = 150.0 * textScale.clamp(1.0, 1.55);
+    final orbSize = 186.0 * textScale.clamp(1.0, 1.55);
+    final innerSize = 158.0 * textScale.clamp(1.0, 1.55);
     final remainingEnergy =
         (TokenConfig.dailyTapLimit - state.tapsToday).clamp(0, TokenConfig.dailyTapLimit);
 
@@ -290,7 +292,7 @@ class HomeScreen extends StatelessWidget {
             child: InkWell(
               onTap: () async {
                 if (state.hapticsEnabled) {
-                  await HapticFeedback.lightImpact();
+                  unawaited(HapticFeedback.lightImpact());
                 }
                 final res = await viewModel.tapOrb();
                 if (!context.mounted) return;
@@ -328,7 +330,7 @@ class HomeScreen extends StatelessWidget {
                       Container(
                         width: innerSize,
                         height: innerSize,
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           gradient: const RadialGradient(
@@ -345,8 +347,8 @@ class HomeScreen extends StatelessWidget {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: <Widget>[
-                            const VortexCoinEmblem(size: 50),
-                            const SizedBox(height: 8),
+                            const VortexCoinEmblem(size: 46),
+                            const SizedBox(height: 6),
                             Text(
                               miningActive
                                   ? '+${pending.toStringAsFixed(4)}'

@@ -66,7 +66,7 @@ void main() {
 
     // Tap core to earn +1 VTX
     await tester.tap(find.text('TAP +1 VTX'));
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(repo.state.balanceVtx, 1.0);
 
     // Airdrop
