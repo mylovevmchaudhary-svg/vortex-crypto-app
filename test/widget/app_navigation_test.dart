@@ -6,14 +6,44 @@ import 'package:vortex_crypto_app/data/services/storage_service.dart';
 import 'package:vortex_crypto_app/main.dart';
 
 void main() {
-  Future<CryptoRepository> createRepo() async {
+  Future<CryptoRepository> createRegisteredRepo() async {
     final repo = CryptoRepository(
       storageService: InMemoryStorageService(),
-      adsService: SimulatedRewardedAdsService(),
+      adsService: TestAdsService(),
     );
     await repo.initialize();
+    await repo.registerAccount(
+      displayName: 'Mukesh Chaudhary',
+      email: 'mukesh@example.com',
+    );
     return repo;
   }
+
+  testWidgets('shows onboarding screen on fresh install and signs up cleanly',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repo = CryptoRepository(
+      storageService: InMemoryStorageService(),
+      adsService: TestAdsService(),
+    );
+    await repo.initialize();
+
+    await tester.pumpWidget(VortexCryptoApp(repository: repo));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Create Your Account'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).at(0), 'Mukesh Chaudhary');
+    await tester.enterText(find.byType(TextField).at(1), 'mukesh@example.com');
+    await tester.tap(find.text('Start Earning VTX'));
+    await tester.pumpAndSettle();
+
+    expect(repo.state.isRegistered, isTrue);
+    expect(find.text('Cloud Mining Node'), findsOneWidget);
+  });
 
   testWidgets('renders all 6 pages on mobile screen with a11y guidelines',
       (WidgetTester tester) async {
@@ -24,7 +54,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final repo = await createRepo();
+    final repo = await createRegisteredRepo();
     await tester.pumpWidget(VortexCryptoApp(repository: repo));
     await tester.pumpAndSettle();
 
@@ -37,10 +67,10 @@ void main() {
     // Tap core to earn +1 VTX
     await tester.tap(find.text('TAP +1 VTX'));
     await tester.pump();
-    expect(repo.state.balanceVtx, 451.0);
+    expect(repo.state.balanceVtx, 1.0);
 
     // Airdrop
-    await tester.tap(find.text('Airdrop'));
+    await tester.tap(find.text('Airdrop').last);
     await tester.pumpAndSettle();
     expect(find.text('1,000,000,000 COIN AIRDROP'), findsOneWidget);
     await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
@@ -76,7 +106,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final repo = await createRepo();
+    final repo = await createRegisteredRepo();
     await tester.pumpWidget(
       MediaQuery(
         data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
@@ -93,7 +123,9 @@ void main() {
       'Profile',
       'Home',
     ]) {
-      await tester.tap(find.text(tab));
+      final target = find.text(tab).last;
+      await tester.ensureVisible(target);
+      await tester.tap(target);
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     }
@@ -106,7 +138,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final repo = await createRepo();
+    final repo = await createRegisteredRepo();
     await tester.pumpWidget(VortexCryptoApp(repository: repo));
     await tester.pumpAndSettle();
 

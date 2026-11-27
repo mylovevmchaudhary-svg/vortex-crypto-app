@@ -31,7 +31,7 @@ class ProfileViewModel extends ChangeNotifier {
   Future<void> toggleBiometricLock(bool value) =>
       _repository.updateProfileSettings(biometricLockEnabled: value);
 
-  Future<void> resetDemoData() => _repository.resetDemoData();
+  Future<void> signOut() => _repository.signOut();
 
   void _onRepoChanged() => notifyListeners();
 

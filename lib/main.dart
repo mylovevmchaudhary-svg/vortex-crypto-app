@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'core/config/token_config.dart';
 import 'core/theme/app_theme.dart';
@@ -9,6 +10,7 @@ import 'ui/core/widgets/app_shell.dart';
 import 'ui/core/widgets/vortex_widgets.dart';
 import 'ui/features/airdrop/airdrop_screen.dart';
 import 'ui/features/airdrop/airdrop_view_model.dart';
+import 'ui/features/auth/onboarding_screen.dart';
 import 'ui/features/home/home_screen.dart';
 import 'ui/features/home/home_view_model.dart';
 import 'ui/features/offer/offer_screen.dart';
@@ -22,9 +24,21 @@ import 'ui/features/wallet/wallet_view_model.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      systemNavigationBarColor: Color(0xFF090D16),
+      systemNavigationBarIconBrightness: Brightness.light,
+    ),
+  );
+
+  final adsService = AdMobAdsService();
+  await adsService.initialize();
+
   final repository = CryptoRepository(
     storageService: SharedPreferencesStorageService(),
-    adsService: SimulatedRewardedAdsService(),
+    adsService: adsService,
   );
   await repository.initialize();
 
@@ -101,12 +115,20 @@ class _VortexCryptoAppState extends State<VortexCryptoApp> {
                   children: <Widget>[
                     VortexCoinEmblem(size: 72),
                     SizedBox(height: 16),
-                    CircularProgressIndicator(color: AppColors.goldBright),
+                    CircularProgressIndicator(
+                      color: AppColors.goldBright,
+                      semanticsLabel: 'Loading application',
+                    ),
                   ],
                 ),
               ),
             );
           }
+
+          if (!widget.repository.state.isRegistered) {
+            return OnboardingScreen(repository: widget.repository);
+          }
+
           return AppShell(
             repository: widget.repository,
             currentIndex: _currentTabIndex,

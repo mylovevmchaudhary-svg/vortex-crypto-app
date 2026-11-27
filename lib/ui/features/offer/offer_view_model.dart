@@ -19,10 +19,12 @@ class OfferViewModel extends ChangeNotifier {
 
   final CryptoRepository _repository;
   OfferFilter _selectedFilter = OfferFilter.all;
+  AdPlacement? _loadingAdPlacement;
 
   CryptoRepository get repository => _repository;
   UserCryptoState get state => _repository.state;
   OfferFilter get selectedFilter => _selectedFilter;
+  AdPlacement? get loadingAdPlacement => _loadingAdPlacement;
 
   List<EarnOffer> get filteredOffers {
     final all = state.offers;
@@ -48,8 +50,22 @@ class OfferViewModel extends ChangeNotifier {
   Future<ActionResult> completeOffer(String offerId) =>
       _repository.completeOffer(offerId);
 
-  Future<ActionResult> claimWatchedAd(AdRewardResult result) =>
-      _repository.claimWatchedAd(result);
+  Future<ActionResult> watchAd(AdPlacement placement) async {
+    if (_loadingAdPlacement != null) {
+      return const ActionResult(
+        success: false,
+        message: 'Ad is already loading...',
+      );
+    }
+    _loadingAdPlacement = placement;
+    notifyListeners();
+    try {
+      return await _repository.watchAndClaimAd(placement);
+    } finally {
+      _loadingAdPlacement = null;
+      notifyListeners();
+    }
+  }
 
   void _onRepoChanged() => notifyListeners();
 

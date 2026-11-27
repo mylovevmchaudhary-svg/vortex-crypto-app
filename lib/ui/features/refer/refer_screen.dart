@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../core/config/token_config.dart';
 import '../../../core/theme/app_theme.dart';
@@ -36,7 +37,7 @@ class _ReferScreenState extends State<ReferScreen> {
       builder: (context, _) {
         final state = widget.viewModel.state;
         return SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
@@ -100,23 +101,25 @@ class _ReferScreenState extends State<ReferScreen> {
       ),
     );
 
-    final copyLinkButton = GoldGradientButton(
-      label: 'Copy Invite Link',
+    final shareButton = GoldGradientButton(
+      label: 'Share Invite Link',
       icon: Icons.share,
+      onPressed: () async {
+        await Share.share(widget.viewModel.shareMessage);
+      },
+    );
+
+    final copyLinkButton = CyberOutlineButton(
+      label: 'Copy Link',
+      icon: Icons.link,
+      height: 52,
+      accentColor: AppColors.cyan,
+      semanticLabel: 'Copy invite link',
       onPressed: () => _copyText(
         context,
         widget.viewModel.inviteLink,
-        'Invite link copied! Share on Telegram or WhatsApp.',
+        'Invite link copied!',
       ),
-    );
-
-    final testInviteButton = CyberOutlineButton(
-      label: 'Test Invite',
-      icon: Icons.person_add_alt_1,
-      height: 52,
-      accentColor: AppColors.cyan,
-      semanticLabel: 'Simulate friend joining with invite code',
-      onPressed: () => _showSimulateInviteDialog(context),
     );
 
     return GlassCard(
@@ -171,15 +174,15 @@ class _ReferScreenState extends State<ReferScreen> {
           ),
           const SizedBox(height: 12),
           if (stackControls) ...<Widget>[
-            copyLinkButton,
+            shareButton,
             const SizedBox(height: 10),
-            testInviteButton,
+            copyLinkButton,
           ] else
             Row(
               children: <Widget>[
-                Expanded(child: copyLinkButton),
+                Expanded(child: shareButton),
                 const SizedBox(width: 10),
-                testInviteButton,
+                copyLinkButton,
               ],
             ),
         ],
@@ -334,7 +337,7 @@ class _ReferScreenState extends State<ReferScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Link a friend\'s code to receive +100 ${TokenConfig.coinSymbol} welcome bonus.',
+            'Enter a friend\'s code to receive +100 ${TokenConfig.coinSymbol} welcome bonus.',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 10),
@@ -346,7 +349,7 @@ class _ReferScreenState extends State<ReferScreen> {
                   textCapitalization: TextCapitalization.characters,
                   textInputAction: TextInputAction.done,
                   decoration: const InputDecoration(
-                    hintText: 'e.g. VTX-10203',
+                    hintText: 'Enter invite code',
                     labelText: 'Sponsor Invite Code',
                   ),
                   onSubmitted: (_) async {
@@ -393,8 +396,26 @@ class _ReferScreenState extends State<ReferScreen> {
         const SizedBox(height: 12),
         if (state.referrals.isEmpty)
           const GlassCard(
-            child: Text(
-              'No referrals yet. Share your code above to start earning 15% team rewards!',
+            child: Row(
+              children: <Widget>[
+                ExcludeSemantics(
+                  child: Icon(
+                    Icons.people_outline,
+                    color: AppColors.cyan,
+                    size: 28,
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'No friends invited yet. Tap Share Invite Link above to invite friends via WhatsApp or Telegram and earn +250 VTX per signup!',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ],
             ),
           )
         else
@@ -481,45 +502,6 @@ class _ReferScreenState extends State<ReferScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
-  }
-
-  Future<void> _showSimulateInviteDialog(BuildContext context) async {
-    final nameController = TextEditingController(text: 'Rohan Sharma');
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: AppColors.surfaceCard,
-        title: const Text('Simulate New Team Invite'),
-        content: TextField(
-          controller: nameController,
-          autofocus: true,
-          textInputAction: TextInputAction.done,
-          onSubmitted: (_) => Navigator.of(dialogContext).pop(true),
-          decoration: const InputDecoration(
-            labelText: 'Friend Display Name',
-          ),
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Add Friend'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true && context.mounted) {
-      final res =
-          await widget.viewModel.simulateFriendJoin(nameController.text);
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(res.message)),
-      );
-    }
-    nameController.dispose();
   }
 }
 

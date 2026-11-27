@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/config/token_config.dart';
 import '../../../core/theme/app_theme.dart';
@@ -42,7 +43,7 @@ class _WalletScreenState extends State<WalletScreen> {
         final txs = widget.viewModel.filteredTransactions;
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
@@ -54,14 +55,33 @@ class _WalletScreenState extends State<WalletScreen> {
               const SizedBox(height: 18),
               const SectionHeader(
                 title: 'Reward Ledger & Transactions',
-                subtitle: 'All verified mining, ad, and referral credits',
+                subtitle: 'Verified mining, ad, and referral credits',
               ),
               const SizedBox(height: 10),
               _buildTxFilterChips(),
               const SizedBox(height: 12),
               if (txs.isEmpty)
                 const GlassCard(
-                  child: Text('No transactions match this filter yet.'),
+                  child: Row(
+                    children: <Widget>[
+                      ExcludeSemantics(
+                        child: Icon(
+                          Icons.receipt_long_outlined,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'No activity yet. Start mining or watch a rewarded ad to record your first verified transaction.',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 )
               else
                 ...txs.map(
@@ -117,14 +137,17 @@ class _WalletScreenState extends State<WalletScreen> {
           const SizedBox(height: 4),
           Text(
             '${AppFormatters.formatTokens(state.balanceVtx, decimals: 2)} ${TokenConfig.coinSymbol}',
-            style: Theme.of(context).textTheme.displaySmall,
+            style: Theme.of(context).textTheme.displaySmall?.copyWith(
+              fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
+            ),
           ),
-          Text(
-            'Indicative Value: ~${AppFormatters.formatUsd(state.estimatedUsdValue)}',
-            style: const TextStyle(
+          const SizedBox(height: 2),
+          const Text(
+            'Price & DEX liquidity open at PancakeSwap TGE Launch',
+            style: TextStyle(
               color: AppColors.cyan,
-              fontWeight: FontWeight.w700,
-              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              fontSize: 12.5,
             ),
           ),
           const SizedBox(height: 14),
@@ -145,7 +168,7 @@ class _WalletScreenState extends State<WalletScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           const Text(
-                            'LOCKED UNTIL 1B AIRDROP',
+                            'LOCKED FOR 1B AIRDROP',
                             style: TextStyle(
                               fontSize: 10.5,
                               fontWeight: FontWeight.w700,
@@ -221,7 +244,7 @@ class _WalletScreenState extends State<WalletScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Connect your MetaMask, Trust Wallet, or Binance Web3 BSC address to receive the 1B Coin Airdrop.',
+            'Enter your BNB Smart Chain (BEP-20) address from MetaMask, Trust Wallet, or Binance Web3 Wallet.',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           if (state.boundWalletAddress != null) ...<Widget>[
@@ -314,20 +337,32 @@ class _WalletScreenState extends State<WalletScreen> {
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _submitWalletBind(context),
             decoration: InputDecoration(
-              hintText: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
+              hintText: '0x...',
               labelText: 'BSC Wallet Address (0x...)',
               errorText: _validationError,
               suffixIcon: Semantics(
                 button: true,
-                label: 'Fill sample BEP-20 wallet address',
+                label: 'Paste BEP-20 address from clipboard',
                 excludeSemantics: true,
                 child: TextButton(
-                  onPressed: () {
-                    _addressController.text =
-                        '0x71C7656EC7ab88b098defB751B7401B5f6d8976F';
+                  onPressed: () async {
+                    final clip = await Clipboard.getData(Clipboard.kTextPlain);
+                    final text = clip?.text?.trim() ?? '';
+                    if (text.isEmpty) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Clipboard is empty. Copy your 0x... address from MetaMask or Trust Wallet.',
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+                    _addressController.text = text;
                     setState(() => _validationError = null);
                   },
-                  child: const Text('Sample'),
+                  child: const Text('Paste'),
                 ),
               ),
             ),
@@ -369,18 +404,37 @@ class _WalletScreenState extends State<WalletScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Semantics(
-            header: true,
-            child: const Text(
-              'Smart Contract Specs (BNB Smart Chain)',
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 15,
-                color: AppColors.textPrimary,
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Semantics(
+                  header: true,
+                  child: const Text(
+                    'Smart Contract Specs (BSC)',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
               ),
-            ),
+              TextButton.icon(
+                onPressed: () async {
+                  final target = TokenConfig.isContractDeployed
+                      ? '${TokenConfig.explorerBaseUrl}/token/${TokenConfig.tokenContractAddress}'
+                      : TokenConfig.explorerBaseUrl;
+                  final uri = Uri.tryParse(target);
+                  if (uri != null) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  }
+                },
+                icon: const Icon(Icons.open_in_new, size: 15),
+                label: const Text('BscScan'),
+              ),
+            ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
           const _SpecRow(
             label: 'Token Name & Ticker',
             value: '${TokenConfig.coinName} (${TokenConfig.coinSymbol})',
@@ -395,10 +449,10 @@ class _WalletScreenState extends State<WalletScreen> {
                 '${AppFormatters.formatCompact(TokenConfig.totalSupply)} / ${AppFormatters.formatCompact(TokenConfig.airdropPoolTotal)}',
           ),
           _SpecRow(
-            label: 'BEP-20 Contract',
+            label: 'Contract Status',
             value: TokenConfig.isContractDeployed
                 ? AppFormatters.shortenAddress(TokenConfig.tokenContractAddress)
-                : 'Included in contracts/VortexToken.sol',
+                : 'Deploying at Phase 3 TGE',
           ),
         ],
       ),

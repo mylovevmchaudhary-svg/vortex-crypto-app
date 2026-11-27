@@ -16,11 +16,13 @@ class HomeViewModel extends ChangeNotifier {
   final CryptoRepository _repository;
   Timer? _ticker;
   int _tapPulseTick = 0;
+  bool _isLoadingAd = false;
 
   CryptoRepository get repository => _repository;
   UserCryptoState get state => _repository.state;
   DateTime get now => _repository.now;
   int get tapPulseTick => _tapPulseTick;
+  bool get isLoadingAd => _isLoadingAd;
 
   void _onRepoChanged() {
     _syncTickerState();
@@ -82,8 +84,22 @@ class HomeViewModel extends ChangeNotifier {
     return result;
   }
 
-  Future<ActionResult> claimAdReward(AdRewardResult result) =>
-      _repository.claimWatchedAd(result);
+  Future<ActionResult> watchAd(AdPlacement placement) async {
+    if (_isLoadingAd) {
+      return const ActionResult(
+        success: false,
+        message: 'Ad is already loading...',
+      );
+    }
+    _isLoadingAd = true;
+    notifyListeners();
+    try {
+      return await _repository.watchAndClaimAd(placement);
+    } finally {
+      _isLoadingAd = false;
+      notifyListeners();
+    }
+  }
 
   @override
   void dispose() {

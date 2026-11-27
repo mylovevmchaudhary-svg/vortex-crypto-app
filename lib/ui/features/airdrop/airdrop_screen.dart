@@ -61,7 +61,7 @@ class AirdropScreen extends StatelessWidget {
                 .clamp(0.0, TokenConfig.airdropPoolTotal);
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
@@ -89,7 +89,7 @@ class AirdropScreen extends StatelessWidget {
     UserCryptoState state,
     double remainingPool,
   ) {
-    final pct = (state.globalPoolProgress * 100).toStringAsFixed(2);
+    final pct = (state.globalPoolProgress * 100).toStringAsFixed(4);
     return GlassCard(
       gradient: AppColors.heroCardGradient,
       borderColor: AppColors.gold.withValues(alpha: 0.45),
@@ -121,7 +121,7 @@ class AirdropScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     const Text(
-                      'Your Projected Airdrop Claim',
+                      'Your Projected Airdrop Share',
                       style: TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 12.5,
@@ -136,7 +136,7 @@ class AirdropScreen extends StatelessWidget {
                               ),
                     ),
                     Text(
-                      'Multiplier: ${state.airdropMultiplier.toStringAsFixed(2)}x on ${AppFormatters.formatTokens(state.balanceVtx, decimals: 0)} mined',
+                      'Multiplier: ${state.airdropMultiplier.toStringAsFixed(2)}x on ${AppFormatters.formatTokens(state.balanceVtx, decimals: 0)} earned',
                       style: const TextStyle(
                         color: AppColors.cyan,
                         fontSize: 12.5,
@@ -147,7 +147,7 @@ class AirdropScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const VortexCoinEmblem(size: 58),
+              const VortexCoinEmblem(size: 56),
             ],
           ),
           const SizedBox(height: 16),
@@ -157,7 +157,7 @@ class AirdropScreen extends StatelessWidget {
             alignment: WrapAlignment.spaceBetween,
             children: <Widget>[
               Text(
-                'Pool Mined: ${AppFormatters.formatCompact(state.globalAirdropDistributed)} / 1.00B',
+                'Your Mined Contribution: ${AppFormatters.formatTokens(state.globalAirdropDistributed, decimals: 0)} / 1.00B',
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
@@ -178,17 +178,17 @@ class AirdropScreen extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
-              value: state.globalPoolProgress,
+              value: state.globalPoolProgress.clamp(0.01, 1.0),
               minHeight: 10,
               semanticsLabel:
-                  '1 Billion coin airdrop pool progress ($pct percent distributed)',
+                  '1 Billion coin airdrop pool progress ($pct percent)',
               backgroundColor: AppColors.bgPrimary,
               valueColor: const AlwaysStoppedAnimation<Color>(AppColors.gold),
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            '${AppFormatters.formatTokens(remainingPool, decimals: 0)} ${TokenConfig.coinSymbol} remaining before Snapshot & Exchange Launch',
+            '${AppFormatters.formatTokens(remainingPool, decimals: 0)} ${TokenConfig.coinSymbol} remaining in 1B Airdrop Vault',
             style: Theme.of(context).textTheme.labelSmall,
           ),
           const SizedBox(height: 16),

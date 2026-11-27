@@ -8,7 +8,7 @@ class TokenConfig {
   // Token Identity
   static const String coinName = 'Vortex Coin';
   static const String coinSymbol = 'VTX';
-  static const String projectTagline = 'Mine • Watch Ads • Claim 1B Airdrop';
+  static const String projectTagline = 'Mine • Watch Ads • 1B Airdrop';
 
   // Tokenomics (BEP-20 Standard - 18 Decimals)
   static const String networkName = 'BNB Smart Chain';
@@ -19,10 +19,6 @@ class TokenConfig {
   // 2B Total Supply with a dedicated 1B (50%) Community Airdrop Pool
   static const double totalSupply = 2000000000;
   static const double airdropPoolTotal = 1000000000; // 1 Billion Coins
-  static const double initialSimulatedClaimedPool = 384500000; // 38.45% mined/claimed
-
-  // Pre-launch indicative reference price (updates after DEX liquidity launch)
-  static const double indicativeListingPriceUsd = 0.012;
 
   // Replace with your deployed BEP-20 token & Merkle airdrop contract addresses
   static const String tokenContractAddress =
@@ -47,15 +43,18 @@ class TokenConfig {
   static const double tier2ReferralPercent = 5.0;
   static const double instantReferralBonus = 250.0;
 
-  // Google AdMob Production / Test IDs (Android)
-  // Replace test IDs with your real AdMob IDs before Play Store release.
+  // Google AdMob IDs (Android)
+  // Uses Google's official test Rewarded Ad unit ID until you replace it
+  // with your live AdMob Rewarded Ad unit ID before Play Store launch.
   static const String androidAdMobAppId =
       'ca-app-pub-3940256099942544~3347511713';
   static const String androidRewardedAdUnitId =
       'ca-app-pub-3940256099942544/5224354917';
 
-  // Backend API (Supabase / Custom REST)
-  static const String backendBaseUrl = 'https://api.yourproject.com';
+  // Project Links
   static const String officialWebsite = 'https://vortexcoin.io';
+  static const String telegramUrl = 'https://t.me/vortexcoin_official';
+  static const String twitterUrl = 'https://x.com/vortexcoin_io';
+  static const String youtubeUrl = 'https://youtube.com/@vortexcoin';
   static const String explorerBaseUrl = 'https://bscscan.com';
 }

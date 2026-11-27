@@ -4,6 +4,7 @@ import '../../../core/config/token_config.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../data/repositories/crypto_repository.dart';
+import '../../../domain/models/crypto_models.dart';
 import 'vortex_widgets.dart';
 
 class NavDestinationItem {
@@ -18,7 +19,7 @@ class NavDestinationItem {
   final IconData activeIcon;
 }
 
-/// Responsive Web3 navigation shell supporting all 6 core pages:
+/// Mobile-first Web3 navigation shell supporting all 6 core pages:
 /// Home, Airdrop, Offer, Refer, Wallet, and Profile.
 class AppShell extends StatelessWidget {
   const AppShell({
@@ -82,10 +83,10 @@ class AppShell extends StatelessWidget {
               body: Container(
                 decoration: const BoxDecoration(
                   gradient: RadialGradient(
-                    center: Alignment(0.0, -0.85),
-                    radius: 1.3,
+                    center: Alignment(0.0, -0.9),
+                    radius: 1.25,
                     colors: <Color>[
-                      Color(0xFF131D33),
+                      Color(0xFF131F38),
                       AppColors.bgPrimary,
                     ],
                   ),
@@ -93,8 +94,8 @@ class AppShell extends StatelessWidget {
                 child: SafeArea(
                   bottom: false,
                   child: isWide
-                      ? _buildWideBody(context, state.balanceVtx)
-                      : _buildMobileBody(context, state.balanceVtx),
+                      ? _buildWideBody(context, state)
+                      : _buildMobileBody(context, state),
                 ),
               ),
               bottomNavigationBar: isWide ? null : _buildMobileBottomBar(context),
@@ -105,43 +106,100 @@ class AppShell extends StatelessWidget {
     );
   }
 
-  Widget _buildTopHeader(BuildContext context, double balanceVtx) {
+  Widget _buildTopHeader(BuildContext context, UserCryptoState state) {
     final balanceText =
-        '${AppFormatters.formatTokens(balanceVtx, decimals: 1)} ${TokenConfig.coinSymbol}';
+        '${AppFormatters.formatTokens(state.balanceVtx, decimals: 2)} ${TokenConfig.coinSymbol}';
     final textScale = MediaQuery.textScalerOf(context).scale(13.0) / 13.0;
     final stackHeader = textScale > 1.35;
+    final initial = state.displayName.trim().isEmpty
+        ? 'V'
+        : state.displayName.trim()[0].toUpperCase();
 
     final brandBlock = Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        const VortexCoinEmblem(size: 36),
-        const SizedBox(width: 10),
+        Semantics(
+          button: true,
+          label: 'Open Profile',
+          excludeSemantics: true,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            child: InkWell(
+              onTap: () => onSelectTab(5),
+              customBorder: const CircleBorder(),
+              child: Center(
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: AppColors.goldGradient,
+                    border: Border.all(
+                      color: AppColors.goldBright.withValues(alpha: 0.7),
+                      width: 1.2,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      initial,
+                      style: const TextStyle(
+                        color: Color(0xFF1A1100),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 6),
         Flexible(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Wrap(
                 spacing: 6,
-                runSpacing: 4,
+                runSpacing: 2,
                 crossAxisAlignment: WrapCrossAlignment.center,
-                children: const <Widget>[
-                  Text(
+                children: <Widget>[
+                  const Text(
                     TokenConfig.coinName,
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 15.5,
                       fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
+                      letterSpacing: -0.2,
                     ),
                   ),
-                  StatusPill(
-                    label: TokenConfig.networkShort,
-                    color: AppColors.cyan,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.cyan.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      TokenConfig.networkShort,
+                      style: TextStyle(
+                        color: AppColors.cyan,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ),
                 ],
               ),
-              const Text(
-                '1B Coin Airdrop Pre-Launch',
-                style: TextStyle(
+              Text(
+                state.displayName.isEmpty
+                    ? TokenConfig.projectTagline
+                    : 'Hi, ${state.displayName}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
                   fontSize: 11.5,
                   color: AppColors.textSecondary,
                 ),
@@ -158,42 +216,40 @@ class AppShell extends StatelessWidget {
       excludeSemantics: true,
       child: ConstrainedBox(
         constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-        child: InkWell(
-          onTap: () => onSelectTab(4),
-          focusColor: AppColors.cyan.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(20),
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 10,
-            ),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceElevated,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: AppColors.gold.withValues(alpha: 0.45),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                const Icon(
-                  Icons.monetization_on,
-                  color: AppColors.goldBright,
-                  size: 16,
+        child: Center(
+          child: InkWell(
+            onTap: () => onSelectTab(4),
+            focusColor: AppColors.cyan.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(22),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceElevated,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: AppColors.gold.withValues(alpha: 0.45),
                 ),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    balanceText,
-                    style: const TextStyle(
-                      color: AppColors.goldBright,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  const VortexCoinEmblem(size: 18, showGlow: false),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      balanceText,
+                      style: const TextStyle(
+                        color: AppColors.goldBright,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12.5,
+                        fontFeatures: <FontFeature>[
+                          FontFeature.tabularFigures(),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -202,13 +258,12 @@ class AppShell extends StatelessWidget {
 
     return FocusTraversalGroup(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+        padding: const EdgeInsets.fromLTRB(12, 6, 14, 4),
         child: stackHeader
             ? Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   brandBlock,
-                  const SizedBox(height: 6),
                   Align(
                     alignment: Alignment.centerRight,
                     child: balanceChip,
@@ -226,10 +281,10 @@ class AppShell extends StatelessWidget {
     );
   }
 
-  Widget _buildMobileBody(BuildContext context, double balanceVtx) {
+  Widget _buildMobileBody(BuildContext context, UserCryptoState state) {
     return Column(
       children: <Widget>[
-        _buildTopHeader(context, balanceVtx),
+        _buildTopHeader(context, state),
         Expanded(
           child: FocusTraversalGroup(
             child: IndexedStack(
@@ -242,7 +297,7 @@ class AppShell extends StatelessWidget {
     );
   }
 
-  Widget _buildWideBody(BuildContext context, double balanceVtx) {
+  Widget _buildWideBody(BuildContext context, UserCryptoState state) {
     return Row(
       children: <Widget>[
         FocusTraversalGroup(
@@ -286,7 +341,7 @@ class AppShell extends StatelessWidget {
               constraints: const BoxConstraints(maxWidth: 920),
               child: Column(
                 children: <Widget>[
-                  _buildTopHeader(context, balanceVtx),
+                  _buildTopHeader(context, state),
                   Expanded(
                     child: FocusTraversalGroup(
                       child: IndexedStack(
@@ -305,10 +360,76 @@ class AppShell extends StatelessWidget {
   }
 
   Widget _buildMobileBottomBar(BuildContext context) {
+    final textScale = MediaQuery.textScalerOf(context).scale(11.0) / 11.0;
+    final useScrollableTabs = textScale > 1.35;
+
+    final tabWidgets = List<Widget>.generate(destinations.length, (index) {
+      final item = destinations[index];
+      final isSelected = index == currentIndex;
+
+      final tile = Semantics(
+        button: true,
+        selected: isSelected,
+        label: '${item.label} tab',
+        excludeSemantics: true,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minWidth: useScrollableTabs ? 76 : 48,
+            minHeight: 54,
+          ),
+          child: InkWell(
+            onTap: () => onSelectTab(index),
+            focusColor: AppColors.cyan.withValues(alpha: 0.2),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  height: 3,
+                  width: isSelected ? 22 : 0,
+                  margin: const EdgeInsets.only(bottom: 5),
+                  decoration: BoxDecoration(
+                    color: AppColors.goldBright,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                Icon(
+                  isSelected ? item.activeIcon : item.icon,
+                  size: 22,
+                  color: isSelected
+                      ? AppColors.goldBright
+                      : AppColors.textSecondary,
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  item.label,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.fade,
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    letterSpacing: -0.2,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: isSelected
+                        ? AppColors.goldBright
+                        : AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      return useScrollableTabs ? tile : Expanded(child: tile);
+    });
+
     return FocusTraversalGroup(
       child: Container(
         decoration: const BoxDecoration(
-          color: Color(0xF50B0F1A),
+          color: Color(0xFA090D16),
           border: Border(
             top: BorderSide(color: AppColors.borderSubtle, width: 1),
           ),
@@ -316,71 +437,13 @@ class AppShell extends StatelessWidget {
         child: SafeArea(
           top: false,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-            child: Row(
-              children: List<Widget>.generate(destinations.length, (index) {
-                final item = destinations[index];
-                final isSelected = index == currentIndex;
-                return Expanded(
-                  child: Semantics(
-                    button: true,
-                    selected: isSelected,
-                    label: '${item.label} tab',
-                    excludeSemantics: true,
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(minHeight: 48),
-                      child: InkWell(
-                        onTap: () => onSelectTab(index),
-                        focusColor: AppColors.cyan.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(14),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 6,
-                            horizontal: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? AppColors.gold.withValues(alpha: 0.14)
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              Icon(
-                                isSelected ? item.activeIcon : item.icon,
-                                size: 21,
-                                color: isSelected
-                                    ? AppColors.goldBright
-                                    : AppColors.textSecondary,
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                item.label,
-                                textAlign: TextAlign.center,
-                                maxLines: 2,
-                                softWrap: true,
-                                style: TextStyle(
-                                  fontSize: 10.5,
-                                  fontWeight: isSelected
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
-                                  color: isSelected
-                                      ? AppColors.goldBright
-                                      : AppColors.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              }),
-            ),
+            padding: const EdgeInsets.only(bottom: 4),
+            child: useScrollableTabs
+                ? SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(children: tabWidgets),
+                  )
+                : Row(children: tabWidgets),
           ),
         ),
       ),

@@ -22,7 +22,7 @@ class ProfileScreen extends StatelessWidget {
       builder: (context, _) {
         final state = viewModel.state;
         return SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
@@ -34,7 +34,7 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 16),
               _buildPreferencesCard(context, state),
               const SizedBox(height: 16),
-              _buildDangerZoneCard(context),
+              _buildSignOutCard(context),
             ],
           ),
         );
@@ -50,8 +50,8 @@ class ProfileScreen extends StatelessWidget {
         children: <Widget>[
           ExcludeSemantics(
             child: Container(
-              width: 62,
-              height: 62,
+              width: 60,
+              height: 60,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: AppColors.goldGradient,
@@ -68,7 +68,7 @@ class ProfileScreen extends StatelessWidget {
                       ? 'V'
                       : state.displayName[0].toUpperCase(),
                   style: const TextStyle(
-                    fontSize: 26,
+                    fontSize: 25,
                     fontWeight: FontWeight.w900,
                     color: Color(0xFF1A1100),
                   ),
@@ -93,7 +93,7 @@ class ProfileScreen extends StatelessWidget {
                       ),
                     ),
                     IconButton(
-                      tooltip: 'Edit Pioneer Name',
+                      tooltip: 'Edit Account Name',
                       onPressed: () =>
                           _editDisplayName(context, state.displayName),
                       icon: const Icon(
@@ -153,8 +153,8 @@ class ProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           const _CheckRow(
-            label: 'Device Integrity & Anti-Sybil Check',
-            value: 'Passed (98%)',
+            label: 'Account Identity Active',
+            value: 'Verified',
             passed: true,
           ),
           _CheckRow(
@@ -201,7 +201,7 @@ class ProfileScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 const Text(
-                  'Whitepaper & 1B Launch Architecture',
+                  'Whitepaper & 1B Launch Model',
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 14.5,
@@ -268,12 +268,12 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDangerZoneCard(BuildContext context) {
+  Widget _buildSignOutCard(BuildContext context) {
     return GlassCard(
       child: Row(
         children: <Widget>[
           const ExcludeSemantics(
-            child: Icon(Icons.restart_alt, color: AppColors.warning),
+            child: Icon(Icons.logout, color: AppColors.danger),
           ),
           const SizedBox(width: 12),
           const Expanded(
@@ -282,14 +282,14 @@ class ProfileScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
-                    'Reset Demo Progress',
+                    'Sign Out',
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
                     ),
                   ),
                   Text(
-                    'Restore starter balance and test all user flows fresh',
+                    'Switch or create a different account on this device',
                     style: TextStyle(
                       fontSize: 12,
                       color: AppColors.textSecondary,
@@ -301,19 +301,13 @@ class ProfileScreen extends StatelessWidget {
           ),
           Semantics(
             button: true,
-            label: 'Reset demo progress',
+            label: 'Sign out of account',
             excludeSemantics: true,
             child: TextButton(
-              onPressed: () async {
-                await viewModel.resetDemoData();
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Demo account reset cleanly.')),
-                );
-              },
+              onPressed: () => _confirmSignOut(context),
               child: const Text(
-                'Reset',
-                style: TextStyle(color: AppColors.warning),
+                'Sign Out',
+                style: TextStyle(color: AppColors.danger),
               ),
             ),
           ),
@@ -331,6 +325,32 @@ class ProfileScreen extends StatelessWidget {
     });
   }
 
+  Future<void> _confirmSignOut(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppColors.surfaceCard,
+        title: const Text('Sign Out?'),
+        content: const Text(
+          'Local session data will be cleared unless synced to your backend account.',
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Sign Out'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await viewModel.signOut();
+    }
+  }
+
   Future<void> _editDisplayName(
     BuildContext context,
     String currentName,
@@ -340,13 +360,13 @@ class ProfileScreen extends StatelessWidget {
       context: context,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: AppColors.surfaceCard,
-        title: const Text('Update Pioneer Name'),
+        title: const Text('Update Display Name'),
         content: TextField(
           controller: controller,
           autofocus: true,
           textInputAction: TextInputAction.done,
           onSubmitted: (_) => Navigator.of(dialogContext).pop(true),
-          decoration: const InputDecoration(labelText: 'Display Name'),
+          decoration: const InputDecoration(labelText: 'Full Name'),
         ),
         actions: <Widget>[
           TextButton(
@@ -413,21 +433,21 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 12),
               const _BlueprintPoint(
                 step: '1',
-                title: 'Watch-to-Earn Ad Revenue Engine',
+                title: 'Google AdMob Revenue-to-Liquidity Engine',
                 detail:
-                    'Users earn VTX via AdMob Rewarded Video Ads + SSV callbacks. Ad revenue generates real USDT/BNB treasury to back token liquidity.',
+                    'Users earn VTX by watching real Rewarded Video Ads. AdMob SSV verifies completions and ad revenue backs PancakeSwap liquidity.',
               ),
               const _BlueprintPoint(
                 step: '2',
                 title: '1,000,000,000 Coin Airdrop (50% Supply)',
                 detail:
-                    'Before DEX launch, snapshot verified balances & bound BEP-20 addresses into a Merkle Tree for gas-efficient on-chain claiming.',
+                    'Before DEX launch, verified balances & bound BEP-20 addresses enter the Merkle Tree for gas-efficient on-chain claiming.',
               ),
               const _BlueprintPoint(
                 step: '3',
-                title: 'BEP-20 Deployment & PancakeSwap Launch',
+                title: 'BNB Smart Chain & PancakeSwap Launch',
                 detail:
-                    'Deploy contracts/VortexToken.sol on BNB Smart Chain, lock PancakeSwap LP tokens, and open VortexMerkleAirdrop.sol for claims.',
+                    'Deploy VortexToken.sol on BSC, lock LP tokens, and open VortexMerkleAirdrop.sol for direct user claims.',
               ),
             ],
           ),
@@ -467,9 +487,8 @@ class _CheckRow extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(
-          crossAxisAlignment: stackValue
-              ? CrossAxisAlignment.start
-              : CrossAxisAlignment.center,
+          crossAxisAlignment:
+              stackValue ? CrossAxisAlignment.start : CrossAxisAlignment.center,
           children: <Widget>[
             ExcludeSemantics(
               child: Padding(

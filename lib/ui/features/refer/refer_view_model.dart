@@ -17,14 +17,14 @@ class ReferViewModel extends ChangeNotifier {
   String get inviteLink =>
       '${TokenConfig.officialWebsite}/invite/${state.referralCode}';
 
+  String get shareMessage =>
+      'Join ${TokenConfig.coinName} (${TokenConfig.coinSymbol}) and claim your share of the 1,000,000,000 ${TokenConfig.coinSymbol} BEP-20 Airdrop! Use my invite code ${state.referralCode} for +100 ${TokenConfig.coinSymbol} bonus: $inviteLink';
+
   int get activeMinersCount =>
       state.referrals.where((member) => member.isActiveMiner).length;
 
   Future<ActionResult> applySponsorCode(String code) =>
       _repository.applySponsorReferralCode(code);
-
-  Future<ActionResult> simulateFriendJoin(String name) =>
-      _repository.inviteDemoFriend(name);
 
   void _onRepoChanged() => notifyListeners();
 

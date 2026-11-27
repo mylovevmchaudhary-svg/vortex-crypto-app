@@ -79,6 +79,7 @@ class EarnOffer {
     required this.badgeText,
     required this.actionLabel,
     required this.durationLabel,
+    this.actionUrl,
     this.isCompleted = false,
   });
 
@@ -90,6 +91,7 @@ class EarnOffer {
   final String badgeText;
   final String actionLabel;
   final String durationLabel;
+  final String? actionUrl;
   final bool isCompleted;
 
   EarnOffer copyWith({bool? isCompleted}) {
@@ -102,6 +104,7 @@ class EarnOffer {
       badgeText: badgeText,
       actionLabel: actionLabel,
       durationLabel: durationLabel,
+      actionUrl: actionUrl,
       isCompleted: isCompleted ?? this.isCompleted,
     );
   }
@@ -115,6 +118,7 @@ class EarnOffer {
         'badgeText': badgeText,
         'actionLabel': actionLabel,
         'durationLabel': durationLabel,
+        'actionUrl': actionUrl,
         'isCompleted': isCompleted,
       };
 
@@ -133,6 +137,7 @@ class EarnOffer {
       badgeText: json['badgeText'] as String,
       actionLabel: json['actionLabel'] as String,
       durationLabel: json['durationLabel'] as String,
+      actionUrl: json['actionUrl'] as String?,
       isCompleted: json['isCompleted'] as bool? ?? false,
     );
   }
@@ -150,7 +155,7 @@ class ReferralMember {
 
   final String id;
   final String displayName;
-  final int tier; // 1 = direct (15%), 2 = indirect (5%)
+  final int tier;
   final bool isActiveMiner;
   final double contributedVtx;
   final DateTime joinedAt;
@@ -212,6 +217,7 @@ class AirdropRoadmapPhase {
 
 class UserCryptoState {
   const UserCryptoState({
+    required this.isRegistered,
     required this.userId,
     required this.displayName,
     required this.email,
@@ -244,6 +250,7 @@ class UserCryptoState {
     required this.transactions,
   });
 
+  final bool isRegistered;
   final String userId;
   final String displayName;
   final String email;
@@ -298,16 +305,14 @@ class UserCryptoState {
     return (currentHourlyRate(now) / 3600.0) * seconds;
   }
 
-  double get estimatedUsdValue =>
-      balanceVtx * TokenConfig.indicativeListingPriceUsd;
-
   double get globalPoolProgress =>
       (globalAirdropDistributed / TokenConfig.airdropPoolTotal).clamp(0.0, 1.0);
 
   int get completedOffersCount =>
       offers.where((offer) => offer.isCompleted).length;
 
-  List<AirdropEligibilityItem> get eligibilityChecklist => <AirdropEligibilityItem>[
+  List<AirdropEligibilityItem> get eligibilityChecklist =>
+      <AirdropEligibilityItem>[
         AirdropEligibilityItem(
           id: 'elig_wallet',
           title: 'Bind BNB Smart Chain (BEP-20) Wallet',
@@ -316,7 +321,7 @@ class UserCryptoState {
               : 'Connected: ${boundWalletAddress!.substring(0, 8)}...${boundWalletAddress!.substring(boundWalletAddress!.length - 4)}',
           multiplierBonus: 'Required',
           isMet: boundWalletAddress != null,
-          targetTabIndex: 4, // Wallet tab
+          targetTabIndex: 4,
         ),
         AirdropEligibilityItem(
           id: 'elig_ads',
@@ -324,7 +329,7 @@ class UserCryptoState {
           subtitle: '$totalAdsWatched / 3 verified ad sessions completed',
           multiplierBonus: '+0.25x Boost',
           isMet: totalAdsWatched >= 3,
-          targetTabIndex: 2, // Offer tab
+          targetTabIndex: 2,
         ),
         AirdropEligibilityItem(
           id: 'elig_offers',
@@ -332,7 +337,7 @@ class UserCryptoState {
           subtitle: '$completedOffersCount / 2 tasks verified',
           multiplierBonus: '+0.25x Boost',
           isMet: completedOffersCount >= 2,
-          targetTabIndex: 2, // Offer tab
+          targetTabIndex: 2,
         ),
         AirdropEligibilityItem(
           id: 'elig_refer',
@@ -340,7 +345,7 @@ class UserCryptoState {
           subtitle: '${referrals.length} / 1 pioneer invited',
           multiplierBonus: '+0.50x Boost',
           isMet: referrals.isNotEmpty,
-          targetTabIndex: 3, // Refer tab
+          targetTabIndex: 3,
         ),
       ];
 
@@ -366,6 +371,8 @@ class UserCryptoState {
       boundWalletAddress != null && totalAdsWatched >= 3;
 
   UserCryptoState copyWith({
+    bool? isRegistered,
+    String? userId,
     String? displayName,
     String? email,
     double? balanceVtx,
@@ -387,6 +394,7 @@ class UserCryptoState {
     bool clearBoost2xUntil = false,
     String? boundWalletAddress,
     String? boundWalletProvider,
+    String? referralCode,
     String? appliedSponsorCode,
     double? globalAirdropDistributed,
     bool? airdropRegistered,
@@ -399,7 +407,8 @@ class UserCryptoState {
     List<WalletTransaction>? transactions,
   }) {
     return UserCryptoState(
-      userId: userId,
+      isRegistered: isRegistered ?? this.isRegistered,
+      userId: userId ?? this.userId,
       displayName: displayName ?? this.displayName,
       email: email ?? this.email,
       balanceVtx: balanceVtx ?? this.balanceVtx,
@@ -422,7 +431,7 @@ class UserCryptoState {
           clearBoost2xUntil ? null : (boost2xUntil ?? this.boost2xUntil),
       boundWalletAddress: boundWalletAddress ?? this.boundWalletAddress,
       boundWalletProvider: boundWalletProvider ?? this.boundWalletProvider,
-      referralCode: referralCode,
+      referralCode: referralCode ?? this.referralCode,
       appliedSponsorCode: appliedSponsorCode ?? this.appliedSponsorCode,
       globalAirdropDistributed:
           globalAirdropDistributed ?? this.globalAirdropDistributed,
@@ -438,6 +447,7 @@ class UserCryptoState {
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
+        'isRegistered': isRegistered,
         'userId': userId,
         'displayName': displayName,
         'email': email,
@@ -482,6 +492,7 @@ class UserCryptoState {
         .toList();
 
     return UserCryptoState(
+      isRegistered: json['isRegistered'] as bool? ?? false,
       userId: json['userId'] as String,
       displayName: json['displayName'] as String,
       email: json['email'] as String,

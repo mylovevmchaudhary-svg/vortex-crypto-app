@@ -38,20 +38,31 @@ jobs:
       - name: Run unit & widget tests
         run: flutter test
 
-      - name: Generate Android project & permissions
+      - name: Generate Android project, AdMob & permissions
         run: |
           flutter create --platforms=android --org com.vortex.crypto --project-name vortex_crypto_app .
           rm -f test/widget_test.dart
           python3 -c '
-          import os
+          import os, re
           manifest = "android/app/src/main/AndroidManifest.xml"
           with open(manifest, "r") as f:
               txt = f.read()
           if "android.permission.INTERNET" not in txt:
               txt = txt.replace("<application", "<uses-permission android:name=\"android.permission.INTERNET\"/>\n    <uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\"/>\n    <application")
           txt = txt.replace("android:label=\"vortex_crypto_app\"", "android:label=\"Vortex Coin\"")
+          if "com.google.android.gms.ads.APPLICATION_ID" not in txt:
+              admob_meta = "<meta-data\n            android:name=\"com.google.android.gms.ads.APPLICATION_ID\"\n            android:value=\"ca-app-pub-3940256099942544~3347511713\"/>\n    </application>"
+              txt = txt.replace("</application>", admob_meta)
           with open(manifest, "w") as f:
               f.write(txt)
+
+          app_gradle = "android/app/build.gradle.kts"
+          if os.path.exists(app_gradle):
+              with open(app_gradle, "r") as f:
+                  g = f.read()
+              g = re.sub(r"minSdk\s*=\s*flutter\.minSdkVersion", "minSdk = 23", g)
+              with open(app_gradle, "w") as f:
+                  f.write(g)
 
           mirror_kts = "maven { url = uri(\"https://maven-central.storage-download.googleapis.com/maven2/\") }"
           for gradle_kts in ["android/settings.gradle.kts", "android/build.gradle.kts"]:
@@ -77,17 +88,18 @@ jobs:
           tag_name: v1.0.0-latest
           name: "Vortex Coin (VTX) — Universal Android Release APK"
           body: |
-            ## Vortex Coin (VTX) — Crypto Mining, Watch Ads & 1B BEP-20 Airdrop App
+            ## Vortex Coin (VTX) — Crypto Mining, Rewarded Ads & 1B BEP-20 Airdrop App
 
             ### Direct APK Download (Zero Actions Storage)
             - **Universal Android APK:** `Vortex_Crypto_App.apk` (works on ARM64, ARMv7 & x86_64 devices)
 
-            ### Pages Included
-            - **Home:** 24h Cloud Mining Node, Tap-to-Earn Core, 2x Speed Boost Ads, Earning Breakdown
+            ### Pages & Features Included
+            - **Onboarding:** Real Account Creation & Invite Code linking (no demo/default accounts)
+            - **Home:** 24h Cloud Mining Node, Tap-to-Earn Core, 2x Speed Boost Ads, Earning Summary
             - **Airdrop:** 1,000,000,000 VTX Pool Tracker, Multiplier Checklist, Launch Roadmap & Tokenomics
-            - **Offer:** Rewarded Video Ad Center, 7-Day Streak, Social & Partner Tasks
-            - **Refer:** 2-Tier Referral Program (`15%` + `5%`), Milestones & Team List
-            - **Wallet:** BEP-20 (`0x...`) Address Binding & Verified Reward Ledger
-            - **Profile:** Anti-Bot Readiness, Launch Whitepaper Blueprint & Security Settings
+            - **Offer:** Real Google AdMob Rewarded Video Ads, 7-Day Streak & Live Social/Web3 Tasks
+            - **Refer:** Native Android Share Sheet + 2-Tier Referral Program (`15%` + `5%`)
+            - **Wallet:** BEP-20 (`0x...`) Address Binding, Paste Support, BscScan Link & Ledger
+            - **Profile:** Anti-Bot Readiness, Launch Whitepaper Blueprint, Preferences & Sign Out
           files: |
             build/app/outputs/flutter-apk/Vortex_Crypto_App.apk

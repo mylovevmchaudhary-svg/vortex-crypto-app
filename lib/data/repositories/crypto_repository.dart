@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 
@@ -6,6 +7,7 @@ import '../../core/config/token_config.dart';
 import '../../core/utils/validators.dart';
 import '../../domain/models/crypto_models.dart';
 import '../services/ads_service.dart';
+import '../services/backend_api_service.dart';
 import '../services/storage_service.dart';
 
 class ActionResult {
@@ -20,21 +22,24 @@ class ActionResult {
   final double awardedVtx;
 }
 
-/// Central repository managing user balances, mining, ad rewards,
+/// Central repository managing user account, mining, real AdMob rewards,
 /// 1B airdrop eligibility, offers, referrals, and BEP-20 wallet binding.
 class CryptoRepository extends ChangeNotifier {
   CryptoRepository({
     required StorageService storageService,
     required AdsService adsService,
+    BackendApiService? backendApiService,
     DateTime Function()? clock,
   })  : _storageService = storageService,
         _adsService = adsService,
+        _backendApiService = backendApiService ?? BackendApiService(),
         _clock = clock ?? DateTime.now;
 
-  static const String _storageKey = 'vortex_crypto_user_state_v1';
+  static const String _storageKey = 'vortex_crypto_user_state_v2';
 
   final StorageService _storageService;
   final AdsService _adsService;
+  final BackendApiService _backendApiService;
   final DateTime Function() _clock;
 
   late UserCryptoState _state;
@@ -60,7 +65,7 @@ class CryptoRepository extends ChangeNotifier {
       phaseNumber: 1,
       title: 'Community Mining & Watch-to-Earn',
       subtitle:
-          'Users earn ${TokenConfig.coinSymbol} via 24h mining, rewarded ads, daily streaks, and partner offers.',
+          'Earn ${TokenConfig.coinSymbol} via 24h cloud mining, Google AdMob rewarded ads, daily streaks, and verified offers.',
       status: RoadmapPhaseStatus.active,
       targetLabel: 'LIVE NOW',
     ),
@@ -98,10 +103,10 @@ class CryptoRepository extends ChangeNotifier {
         final decoded = jsonDecode(raw) as Map<String, dynamic>;
         _state = UserCryptoState.fromJson(decoded);
       } catch (_) {
-        _state = _buildInitialState();
+        _state = _buildFreshUnregisteredState();
       }
     } else {
-      _state = _buildInitialState();
+      _state = _buildFreshUnregisteredState();
     }
     _syncCompletedMiningIfNeeded();
     _initialized = true;
@@ -110,6 +115,91 @@ class CryptoRepository extends ChangeNotifier {
 
   Future<void> _persist() async {
     await _storageService.writeString(_storageKey, jsonEncode(_state.toJson()));
+    await _backendApiService.upsertUserProfile(_state);
+  }
+
+  Future<ActionResult> registerAccount({
+    required String displayName,
+    required String email,
+    String? sponsorCode,
+  }) async {
+    final trimmedName = displayName.trim();
+    final trimmedEmail = email.trim().toLowerCase();
+
+    if (trimmedName.length < 2) {
+      return const ActionResult(
+        success: false,
+        message: 'Please enter your full name (at least 2 characters).',
+      );
+    }
+    if (!trimmedEmail.contains('@') || !trimmedEmail.contains('.')) {
+      return const ActionResult(
+        success: false,
+        message: 'Please enter a valid email address.',
+      );
+    }
+
+    final cleanSponsor = sponsorCode?.trim().toUpperCase() ?? '';
+    if (cleanSponsor.isNotEmpty) {
+      final err = AppValidators.validateReferralCode(cleanSponsor);
+      if (err != null) {
+        return ActionResult(success: false, message: err);
+      }
+    }
+
+    final rng = Random();
+    final suffix = (10000 + rng.nextInt(89999)).toString();
+    final generatedUserId = '${TokenConfig.coinSymbol}-$suffix';
+    final generatedRefCode = '${TokenConfig.coinSymbol}-$suffix';
+    final currentTime = _clock();
+
+    var startingBalance = 0.0;
+    var referralEarned = 0.0;
+    final txs = <WalletTransaction>[];
+
+    if (cleanSponsor.isNotEmpty) {
+      const inviteBonus = 100.0;
+      startingBalance += inviteBonus;
+      referralEarned += inviteBonus;
+      txs.add(
+        WalletTransaction(
+          id: 'tx_signup_ref_${currentTime.millisecondsSinceEpoch}',
+          title: 'Sponsor Invite Linked ($cleanSponsor)',
+          subtitle: 'Welcome referral bonus',
+          amount: inviteBonus,
+          type: TransactionType.referral,
+          timestamp: currentTime,
+        ),
+      );
+    }
+
+    _state = _buildFreshUnregisteredState().copyWith(
+      isRegistered: true,
+      userId: generatedUserId,
+      referralCode: generatedRefCode,
+      displayName: trimmedName,
+      email: trimmedEmail,
+      appliedSponsorCode: cleanSponsor.isEmpty ? null : cleanSponsor,
+      balanceVtx: startingBalance,
+      referralEarnedVtx: referralEarned,
+      transactions: txs,
+    );
+
+    await _persist();
+    notifyListeners();
+    return ActionResult(
+      success: true,
+      message: cleanSponsor.isNotEmpty
+          ? 'Account created! +100 ${TokenConfig.coinSymbol} invite bonus credited.'
+          : 'Welcome to ${TokenConfig.coinName}! Start mining or watch ads to earn.',
+      awardedVtx: startingBalance,
+    );
+  }
+
+  Future<void> signOut() async {
+    _state = _buildFreshUnregisteredState();
+    await _storageService.remove(_storageKey);
+    notifyListeners();
   }
 
   void _syncCompletedMiningIfNeeded() {
@@ -168,7 +258,7 @@ class CryptoRepository extends ChangeNotifier {
     notifyListeners();
     return const ActionResult(
       success: true,
-      message: '24-hour cloud mining started! Watch an ad anytime for 2x speed.',
+      message: '24-hour mining started! Watch a rewarded ad anytime for 2x speed.',
     );
   }
 
@@ -178,7 +268,7 @@ class CryptoRepository extends ChangeNotifier {
     if (pending < 0.01) {
       return const ActionResult(
         success: false,
-        message: 'No mined coins ready to harvest yet. Wait a moment!',
+        message: 'Mining just started — wait a few seconds before harvesting.',
       );
     }
 
@@ -221,7 +311,7 @@ class CryptoRepository extends ChangeNotifier {
       return const ActionResult(
         success: false,
         message:
-            'Daily tap limit (${TokenConfig.dailyTapLimit}) reached. Watch ads or complete offers to earn more!',
+            'Daily tap energy (${TokenConfig.dailyTapLimit}) depleted. Watch ads or complete offers to earn more!',
       );
     }
 
@@ -229,7 +319,6 @@ class CryptoRepository extends ChangeNotifier {
     const reward = TokenConfig.tapRewardAmount;
     final nextTapCount = _state.tapsToday + 1;
 
-    // Group tap logs only every 10 taps to keep ledger clean, while crediting balance instantly.
     var nextTxs = _state.transactions;
     if (nextTapCount == 1 || nextTapCount % 10 == 0) {
       nextTxs = <WalletTransaction>[
@@ -262,11 +351,28 @@ class CryptoRepository extends ChangeNotifier {
     );
   }
 
-  Future<ActionResult> claimWatchedAd(AdRewardResult rewardResult) async {
-    if (!rewardResult.completed) {
+  Future<ActionResult> watchAndClaimAd(AdPlacement placement) async {
+    if (_state.adsWatchedToday >= TokenConfig.dailyAdWatchLimit) {
       return const ActionResult(
         success: false,
-        message: 'Ad must be watched completely to receive your reward.',
+        message:
+            'Daily ad limit (${TokenConfig.dailyAdWatchLimit}/day) reached. Come back tomorrow!',
+      );
+    }
+
+    final result = await _adsService.showRewardedAd(
+      placement: placement,
+      userId: _state.userId,
+    );
+    return claimWatchedAd(result);
+  }
+
+  Future<ActionResult> claimWatchedAd(AdRewardResult rewardResult) async {
+    if (!rewardResult.completed) {
+      return ActionResult(
+        success: false,
+        message: rewardResult.errorMessage ??
+            'Ad must be watched completely to receive your reward.',
       );
     }
     if (_state.adsWatchedToday >= TokenConfig.dailyAdWatchLimit) {
@@ -280,9 +386,10 @@ class CryptoRepository extends ChangeNotifier {
     final currentTime = _clock();
     DateTime? nextBoostUntil = _state.boost2xUntil;
     if (rewardResult.boostHoursGranted > 0) {
-      final baseTime = (nextBoostUntil != null && nextBoostUntil.isAfter(currentTime))
-          ? nextBoostUntil
-          : currentTime;
+      final baseTime =
+          (nextBoostUntil != null && nextBoostUntil.isAfter(currentTime))
+              ? nextBoostUntil
+              : currentTime;
       nextBoostUntil =
           baseTime.add(Duration(hours: rewardResult.boostHoursGranted));
     }
@@ -403,7 +510,7 @@ class CryptoRepository extends ChangeNotifier {
     return ActionResult(
       success: true,
       message:
-          'Offer verified! +${offer.reward.toStringAsFixed(0)} ${TokenConfig.coinSymbol}',
+          'Task verified! +${offer.reward.toStringAsFixed(0)} ${TokenConfig.coinSymbol}',
       awardedVtx: offer.reward,
     );
   }
@@ -509,53 +616,6 @@ class CryptoRepository extends ChangeNotifier {
     );
   }
 
-  Future<ActionResult> inviteDemoFriend(String friendName) async {
-    final trimmed = friendName.trim();
-    if (trimmed.isEmpty) {
-      return const ActionResult(
-        success: false,
-        message: 'Enter a friend name to simulate referral invite.',
-      );
-    }
-
-    final currentTime = _clock();
-    const bonus = TokenConfig.instantReferralBonus;
-    final newMember = ReferralMember(
-      id: 'ref_${currentTime.millisecondsSinceEpoch}',
-      displayName: trimmed,
-      tier: 1,
-      isActiveMiner: true,
-      contributedVtx: bonus,
-      joinedAt: currentTime,
-    );
-
-    final tx = WalletTransaction(
-      id: 'tx_ref_${currentTime.millisecondsSinceEpoch}',
-      title: 'New Pioneer Joined: $trimmed',
-      subtitle: 'Tier 1 referral bonus (+15% lifetime mining share)',
-      amount: bonus,
-      type: TransactionType.referral,
-      timestamp: currentTime,
-    );
-
-    _state = _state.copyWith(
-      balanceVtx: _state.balanceVtx + bonus,
-      referralEarnedVtx: _state.referralEarnedVtx + bonus,
-      globalAirdropDistributed: _state.globalAirdropDistributed + bonus,
-      referrals: <ReferralMember>[newMember, ..._state.referrals],
-      transactions: <WalletTransaction>[tx, ..._state.transactions],
-    );
-
-    await _persist();
-    notifyListeners();
-    return ActionResult(
-      success: true,
-      message:
-          '$trimmed joined your team! +${bonus.toStringAsFixed(0)} ${TokenConfig.coinSymbol} earned.',
-      awardedVtx: bonus,
-    );
-  }
-
   Future<ActionResult> registerForAirdropSnapshot() async {
     if (_state.airdropRegistered) {
       return const ActionResult(
@@ -624,27 +684,21 @@ class CryptoRepository extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> resetDemoData() async {
-    _state = _buildInitialState();
-    await _persist();
-    notifyListeners();
-  }
-
-  UserCryptoState _buildInitialState() {
-    final currentTime = _clock();
-    return UserCryptoState(
-      userId: 'VTX-USR-88412',
-      displayName: 'Pioneer Founder',
-      email: 'founder@vortexcoin.io',
-      balanceVtx: 450.0,
-      adEarnedVtx: 50.0,
-      referralEarnedVtx: 250.0,
-      miningEarnedVtx: 150.0,
+  UserCryptoState _buildFreshUnregisteredState() {
+    return const UserCryptoState(
+      isRegistered: false,
+      userId: '',
+      displayName: '',
+      email: '',
+      balanceVtx: 0.0,
+      adEarnedVtx: 0.0,
+      referralEarnedVtx: 0.0,
+      miningEarnedVtx: 0.0,
       offerEarnedVtx: 0.0,
-      totalAdsWatched: 1,
-      adsWatchedToday: 1,
+      totalAdsWatched: 0,
+      adsWatchedToday: 0,
       tapsToday: 0,
-      streakDay: 1,
+      streakDay: 0,
       streakClaimedToday: false,
       miningActive: false,
       miningSessionEnd: null,
@@ -652,107 +706,66 @@ class CryptoRepository extends ChangeNotifier {
       boost2xUntil: null,
       boundWalletAddress: null,
       boundWalletProvider: null,
-      referralCode: 'VTX-88412',
+      referralCode: '',
       appliedSponsorCode: null,
-      globalAirdropDistributed: TokenConfig.initialSimulatedClaimedPool,
+      globalAirdropDistributed: 0.0,
       airdropRegistered: false,
       notificationsEnabled: true,
       miningAlertsEnabled: true,
       hapticsEnabled: true,
       biometricLockEnabled: false,
       offers: <EarnOffer>[
-        const EarnOffer(
+        EarnOffer(
           id: 'offer_tg',
-          title: 'Join Official Telegram Announcement',
+          title: 'Join Official Telegram Channel',
           description:
-              'Get live 1B airdrop snapshot alerts and BSC contract launch news.',
+              'Get live 1B airdrop snapshot dates and BSC contract launch alerts.',
           reward: 150,
           category: OfferCategory.social,
-          badgeText: 'SOCIAL',
-          actionLabel: 'Verify & Claim',
+          badgeText: 'TELEGRAM',
+          actionLabel: 'Join & Verify',
           durationLabel: '30 sec',
+          actionUrl: TokenConfig.telegramUrl,
         ),
-        const EarnOffer(
+        EarnOffer(
           id: 'offer_x',
-          title: 'Follow ${TokenConfig.coinName} on X (Twitter)',
+          title: 'Follow ${TokenConfig.coinName} on X',
           description:
-              'Follow & repost our pinned 1B Airdrop Launch thread.',
+              'Follow our official X handle for token listing announcements.',
           reward: 150,
           category: OfferCategory.social,
-          badgeText: 'SOCIAL',
-          actionLabel: 'Verify & Claim',
-          durationLabel: '45 sec',
+          badgeText: 'X / TWITTER',
+          actionLabel: 'Follow & Verify',
+          durationLabel: '30 sec',
+          actionUrl: TokenConfig.twitterUrl,
         ),
-        const EarnOffer(
-          id: 'offer_ad_sprint',
-          title: 'Partner Sponsored Survey & Quiz',
+        EarnOffer(
+          id: 'offer_yt',
+          title: 'Subscribe on YouTube',
           description:
-              'Answer 3 quick Web3 preference questions to earn bonus coins.',
-          reward: 300,
-          category: OfferCategory.partner,
-          badgeText: 'PARTNER',
-          actionLabel: 'Complete Offer',
-          durationLabel: '2 min',
+              'Watch our project roadmap & tokenomics launch breakdown.',
+          reward: 120,
+          category: OfferCategory.ads,
+          badgeText: 'YOUTUBE',
+          actionLabel: 'Watch & Claim',
+          durationLabel: '1 min',
+          actionUrl: TokenConfig.youtubeUrl,
         ),
-        const EarnOffer(
-          id: 'offer_bsc_check',
-          title: 'Add BNB Smart Chain to MetaMask',
+        EarnOffer(
+          id: 'offer_bsc_ready',
+          title: 'Setup BNB Smart Chain Network',
           description:
-              'Configure BSC Mainnet (Chain ID 56) in your wallet before TGE.',
+              'Ensure BNB Smart Chain (BEP-20) is enabled in your Web3 wallet.',
           reward: 200,
           category: OfferCategory.partner,
           badgeText: 'WEB3 SETUP',
-          actionLabel: 'Mark Ready',
+          actionLabel: 'Verify Setup',
           durationLabel: '1 min',
-        ),
-        const EarnOffer(
-          id: 'offer_yt',
-          title: 'Watch Launch Tokenomics Explainer',
-          description:
-              'Learn how the 1B Airdrop & PancakeSwap liquidity launch works.',
-          reward: 120,
-          category: OfferCategory.ads,
-          badgeText: 'FEATURED',
-          actionLabel: 'Watch & Claim',
-          durationLabel: '1 min',
+          actionUrl: TokenConfig.explorerBaseUrl,
         ),
       ],
-      referrals: <ReferralMember>[
-        ReferralMember(
-          id: 'ref_seed_1',
-          displayName: 'Aarav Patel',
-          tier: 1,
-          isActiveMiner: true,
-          contributedVtx: 250,
-          joinedAt: currentTime.subtract(const Duration(days: 2)),
-        ),
-      ],
-      transactions: <WalletTransaction>[
-        WalletTransaction(
-          id: 'tx_seed_ref',
-          title: 'Referral Bonus: Aarav Patel',
-          subtitle: 'Tier 1 invite reward',
-          amount: 250,
-          type: TransactionType.referral,
-          timestamp: currentTime.subtract(const Duration(days: 2)),
-        ),
-        WalletTransaction(
-          id: 'tx_seed_welcome',
-          title: 'Early Pioneer Welcome Grant',
-          subtitle: 'Genesis mining pool allocation',
-          amount: 150,
-          type: TransactionType.airdropBonus,
-          timestamp: currentTime.subtract(const Duration(days: 3)),
-        ),
-        WalletTransaction(
-          id: 'tx_seed_ad',
-          title: 'Rewarded Video Ad',
-          subtitle: 'Verified Watch-to-Earn • SSV-A91F204C',
-          amount: 50,
-          type: TransactionType.adReward,
-          timestamp: currentTime.subtract(const Duration(hours: 4)),
-        ),
-      ],
+      referrals: <ReferralMember>[],
+      transactions: <WalletTransaction>[],
     );
   }
 }

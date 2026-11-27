@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/config/token_config.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../data/services/ads_service.dart';
-import '../../core/widgets/ad_player_dialog.dart';
 import '../../core/widgets/vortex_widgets.dart';
 import 'home_view_model.dart';
 
@@ -27,28 +27,18 @@ class HomeScreen extends StatelessWidget {
         final pending = viewModel.pendingMining;
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              _buildPortfolioBanner(
-                context,
-                state.balanceVtx,
-                state.estimatedUsdValue,
-                state.globalPoolProgress,
-              ),
+              _buildBalanceHeroHeader(context, state.balanceVtx),
               const SizedBox(height: 16),
+              _buildQuickActionCircleBar(context),
+              const SizedBox(height: 18),
               _buildMiningCoreCard(context, pending),
-              const SizedBox(height: 16),
-              _buildAdBoostSpotlight(context),
-              const SizedBox(height: 18),
-              const SectionHeader(
-                title: 'Quick Actions',
-                subtitle: 'Boost your 1B Airdrop allocation every day',
-              ),
-              const SizedBox(height: 12),
-              _buildQuickActionsGrid(context),
-              const SizedBox(height: 18),
+              const SizedBox(height: 14),
+              _buildAdBoostBanner(context),
+              const SizedBox(height: 14),
               _buildEarningsBreakdownCard(context),
             ],
           ),
@@ -57,63 +47,165 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPortfolioBanner(
-    BuildContext context,
-    double balanceVtx,
-    double usdValue,
-    double poolProgress,
-  ) {
-    return GlassCard(
-      gradient: AppColors.heroCardGradient,
-      borderColor: AppColors.gold.withValues(alpha: 0.35),
-      glowColor: AppColors.gold,
+  Widget _buildBalanceHeroHeader(BuildContext context, double balanceVtx) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
+          const Text(
+            'TOTAL ${TokenConfig.coinSymbol} BALANCE',
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.0,
+            ),
+          ),
+          const SizedBox(height: 6),
           Wrap(
             spacing: 8,
-            runSpacing: 6,
-            alignment: WrapAlignment.spaceBetween,
+            alignment: WrapAlignment.center,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: <Widget>[
-              const StatusPill(
-                label: 'GENESIS MINING LIVE',
-                color: AppColors.cyan,
-                icon: Icons.sensors,
+              Text(
+                AppFormatters.formatTokens(balanceVtx, decimals: 2),
+                style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                  fontSize: 38,
+                  fontFeatures: const <FontFeature>[
+                    FontFeature.tabularFigures(),
+                  ],
+                ),
               ),
-              Semantics(
+              const Text(
+                TokenConfig.coinSymbol,
+                style: TextStyle(
+                  color: AppColors.goldBright,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Semantics(
+            button: true,
+            label: 'View 1B Coin Airdrop details',
+            excludeSemantics: true,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+              child: InkWell(
+                onTap: () => onNavigateTab(1),
+                borderRadius: BorderRadius.circular(20),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      const Icon(
+                        Icons.rocket_launch,
+                        size: 14,
+                        color: AppColors.cyan,
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          'Pre-Launch • 1B ${TokenConfig.coinSymbol} Airdrop Pool',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: AppColors.cyan,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      const Icon(
+                        Icons.chevron_right,
+                        size: 16,
+                        color: AppColors.cyan,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActionCircleBar(BuildContext context) {
+    final actions = <_CircleActionData>[
+      _CircleActionData(
+        label: 'Watch Ad',
+        icon: Icons.play_arrow_rounded,
+        color: AppColors.violetBright,
+        onTap: () => _watchAd(context, AdPlacement.watchAndEarn),
+      ),
+      _CircleActionData(
+        label: 'Airdrop',
+        icon: Icons.rocket_launch_outlined,
+        color: AppColors.cyan,
+        onTap: () => onNavigateTab(1),
+      ),
+      _CircleActionData(
+        label: 'Offers',
+        icon: Icons.card_giftcard,
+        color: AppColors.goldBright,
+        onTap: () => onNavigateTab(2),
+      ),
+      _CircleActionData(
+        label: 'Invite',
+        icon: Icons.group_add_outlined,
+        color: AppColors.success,
+        onTap: () => onNavigateTab(3),
+      ),
+    ];
+
+    return Row(
+      children: actions
+          .map(
+            (item) => Expanded(
+              child: Semantics(
                 button: true,
-                label:
-                    'View 1B Airdrop progress, ${(poolProgress * 100).toStringAsFixed(1)} percent mined',
+                label: item.label,
                 excludeSemantics: true,
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                   child: InkWell(
-                    onTap: () => onNavigateTab(1),
-                    borderRadius: BorderRadius.circular(12),
+                    onTap: item.onTap,
+                    borderRadius: BorderRadius.circular(16),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 12,
-                      ),
-                      child: Row(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
-                          Flexible(
-                            child: Text(
-                              '${(poolProgress * 100).toStringAsFixed(1)}% of 1B Pool',
-                              style: const TextStyle(
-                                color: AppColors.goldBright,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: item.color.withValues(alpha: 0.14),
+                              border: Border.all(
+                                color: item.color.withValues(alpha: 0.4),
                               ),
                             ),
+                            child: Icon(item.icon, color: item.color, size: 22),
                           ),
-                          const SizedBox(width: 2),
-                          const Icon(
-                            Icons.chevron_right,
-                            size: 16,
-                            color: AppColors.goldBright,
+                          const SizedBox(height: 6),
+                          Text(
+                            item.label,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
                           ),
                         ],
                       ),
@@ -121,48 +213,9 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Your Total Earned Balance',
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 13,
             ),
-          ),
-          const SizedBox(height: 4),
-          Wrap(
-            spacing: 8,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: <Widget>[
-              Text(
-                AppFormatters.formatTokens(balanceVtx, decimals: 2),
-                style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                      color: AppColors.textPrimary,
-                    ),
-              ),
-              const Text(
-                TokenConfig.coinSymbol,
-                style: TextStyle(
-                  color: AppColors.goldBright,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Est. Launch Value: ~${AppFormatters.formatUsd(usdValue)} @ \$${TokenConfig.indicativeListingPriceUsd.toStringAsFixed(3)}',
-            style: const TextStyle(
-              color: AppColors.cyan,
-              fontSize: 12.5,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
+          )
+          .toList(),
     );
   }
 
@@ -171,14 +224,17 @@ class HomeScreen extends StatelessWidget {
     final miningActive = state.miningActive;
     final isBoosted = viewModel.isBoostActive;
     final textScale = MediaQuery.textScalerOf(context).scale(14.0) / 14.0;
-    final orbSize = 176.0 * textScale.clamp(1.0, 1.55);
-    final innerSize = 148.0 * textScale.clamp(1.0, 1.55);
+    final orbSize = 178.0 * textScale.clamp(1.0, 1.55);
+    final innerSize = 150.0 * textScale.clamp(1.0, 1.55);
+    final remainingEnergy =
+        (TokenConfig.dailyTapLimit - state.tapsToday).clamp(0, TokenConfig.dailyTapLimit);
 
     return GlassCard(
+      gradient: AppColors.heroCardGradient,
       borderColor: miningActive
           ? AppColors.cyan.withValues(alpha: 0.45)
           : AppColors.borderSubtle,
-      glowColor: miningActive ? AppColors.cyan : null,
+      glowColor: miningActive ? AppColors.cyan : AppColors.gold,
       child: Column(
         children: <Widget>[
           Row(
@@ -192,7 +248,7 @@ class HomeScreen extends StatelessWidget {
                       child: const Text(
                         'Cloud Mining Node',
                         style: TextStyle(
-                          fontSize: 17,
+                          fontSize: 16.5,
                           fontWeight: FontWeight.w800,
                           color: AppColors.textPrimary,
                         ),
@@ -200,7 +256,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Rate: +${viewModel.currentHourlyRate.toStringAsFixed(1)} ${TokenConfig.coinSymbol}/hr',
+                      '+${viewModel.currentHourlyRate.toStringAsFixed(1)} ${TokenConfig.coinSymbol}/hr',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -214,27 +270,28 @@ class HomeScreen extends StatelessWidget {
               if (isBoosted)
                 StatusPill(
                   label:
-                      '2X BOOST ${AppFormatters.formatCountdown(viewModel.boostRemaining)}',
+                      '2X ${AppFormatters.formatCountdown(viewModel.boostRemaining)}',
                   color: AppColors.goldBright,
                   icon: Icons.bolt,
                 )
               else
                 StatusPill(
-                  label: miningActive ? 'MINING ON' : 'IDLE',
-                  color:
-                      miningActive ? AppColors.success : AppColors.textSecondary,
+                  label: miningActive ? 'ACTIVE' : 'READY',
+                  color: miningActive ? AppColors.success : AppColors.cyan,
                 ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
           Semantics(
             button: true,
-            label: miningActive
-                ? 'Tap coin core to earn 1 ${TokenConfig.coinSymbol}. ${state.tapsToday} of ${TokenConfig.dailyTapLimit} daily taps used.'
-                : 'Tap coin core to earn 1 ${TokenConfig.coinSymbol}. ${state.tapsToday} of ${TokenConfig.dailyTapLimit} daily taps used.',
+            label:
+                'Tap coin core to earn 1 ${TokenConfig.coinSymbol}. $remainingEnergy of ${TokenConfig.dailyTapLimit} energy remaining.',
             excludeSemantics: true,
             child: InkWell(
               onTap: () async {
+                if (state.hapticsEnabled) {
+                  await HapticFeedback.lightImpact();
+                }
                 final res = await viewModel.tapOrb();
                 if (!context.mounted) return;
                 if (!res.success) {
@@ -245,8 +302,8 @@ class HomeScreen extends StatelessWidget {
               },
               customBorder: const CircleBorder(),
               child: AnimatedScale(
-                duration: const Duration(milliseconds: 120),
-                scale: viewModel.tapPulseTick.isOdd ? 0.96 : 1.0,
+                duration: const Duration(milliseconds: 110),
+                scale: viewModel.tapPulseTick.isOdd ? 0.95 : 1.0,
                 child: SizedBox(
                   width: orbSize,
                   height: orbSize,
@@ -260,7 +317,7 @@ class HomeScreen extends StatelessWidget {
                           value: miningActive
                               ? viewModel.miningSessionProgress.clamp(0.05, 1.0)
                               : 0.0,
-                          strokeWidth: 8,
+                          strokeWidth: 7,
                           semanticsLabel: '24 hour cloud mining progress',
                           backgroundColor: AppColors.surfaceElevated,
                           valueColor: AlwaysStoppedAnimation<Color>(
@@ -271,7 +328,7 @@ class HomeScreen extends StatelessWidget {
                       Container(
                         width: innerSize,
                         height: innerSize,
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           gradient: const RadialGradient(
@@ -288,8 +345,8 @@ class HomeScreen extends StatelessWidget {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: <Widget>[
-                            const VortexCoinEmblem(size: 48),
-                            const SizedBox(height: 6),
+                            const VortexCoinEmblem(size: 50),
+                            const SizedBox(height: 8),
                             Text(
                               miningActive
                                   ? '+${pending.toStringAsFixed(4)}'
@@ -299,10 +356,13 @@ class HomeScreen extends StatelessWidget {
                                 color: AppColors.goldBright,
                                 fontWeight: FontWeight.w800,
                                 fontSize: 14,
+                                fontFeatures: <FontFeature>[
+                                  FontFeature.tabularFigures(),
+                                ],
                               ),
                             ),
                             Text(
-                              'Taps: ${state.tapsToday}/${TokenConfig.dailyTapLimit}',
+                              '$remainingEnergy/${TokenConfig.dailyTapLimit} Energy',
                               textAlign: TextAlign.center,
                               style: const TextStyle(
                                 color: AppColors.textSecondary,
@@ -319,22 +379,17 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          if (miningActive)
-            Text(
-              'Session resets in ${AppFormatters.formatCountdown(viewModel.miningRemaining)} • Tap core anytime for +1 ${TokenConfig.coinSymbol}',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium,
-            )
-          else
-            Text(
-              'Start your 24h cloud miner & tap the coin core for bonus ${TokenConfig.coinSymbol}',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          const SizedBox(height: 16),
+          Text(
+            miningActive
+                ? 'Session ends in ${AppFormatters.formatCountdown(viewModel.miningRemaining)} • Tap coin for instant ${TokenConfig.coinSymbol}'
+                : 'Tap the coin core for instant ${TokenConfig.coinSymbol} or start 24h passive mining',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 14),
           GoldGradientButton(
             label: miningActive
-                ? 'Harvest (+${pending.toStringAsFixed(2)})'
+                ? 'Harvest (+${pending.toStringAsFixed(2)} ${TokenConfig.coinSymbol})'
                 : 'Start 24h Mining',
             icon: miningActive ? Icons.downloading : Icons.play_arrow,
             onPressed: () async {
@@ -352,24 +407,24 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAdBoostSpotlight(BuildContext context) {
+  Widget _buildAdBoostBanner(BuildContext context) {
     final state = viewModel.state;
     return GlassCard(
       gradient: LinearGradient(
         colors: <Color>[
-          AppColors.violet.withValues(alpha: 0.22),
+          AppColors.violet.withValues(alpha: 0.2),
           AppColors.surfaceCard,
         ],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
-      borderColor: AppColors.violet.withValues(alpha: 0.45),
+      borderColor: AppColors.violet.withValues(alpha: 0.4),
       child: Row(
         children: <Widget>[
           ExcludeSemantics(
             child: Container(
-              width: 48,
-              height: 48,
+              width: 46,
+              height: 46,
               decoration: BoxDecoration(
                 gradient: AppColors.violetGradient,
                 borderRadius: BorderRadius.circular(14),
@@ -377,26 +432,26 @@ class HomeScreen extends StatelessWidget {
               child: const Icon(
                 Icons.ondemand_video,
                 color: Colors.white,
-                size: 26,
+                size: 24,
               ),
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 const Text(
-                  'Watch Ad • 2x Speed + 25 VTX',
+                  '2x Speed Ad Boost (+25 ${TokenConfig.coinSymbol})',
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
-                    fontSize: 15,
+                    fontSize: 14.5,
                     color: AppColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 2),
                 Text(
-                  'Ads today: ${state.adsWatchedToday} of ${TokenConfig.dailyAdWatchLimit} • Unlocks +2h 2x mining rate',
+                  '${state.adsWatchedToday}/${TokenConfig.dailyAdWatchLimit} ads watched today',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ],
@@ -404,110 +459,33 @@ class HomeScreen extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           CyberOutlineButton(
-            label: 'Watch',
+            label: viewModel.isLoadingAd ? 'Loading...' : 'Boost',
             accentColor: AppColors.violetBright,
             icon: Icons.bolt,
-            semanticLabel:
-                'Watch ad for 2x mining speed boost and 25 ${TokenConfig.coinSymbol}',
-            onPressed: () => _launchAd(context, AdPlacement.miningBoost2x),
+            semanticLabel: 'Watch rewarded ad for 2x mining speed boost',
+            onPressed: viewModel.isLoadingAd
+                ? null
+                : () => _watchAd(context, AdPlacement.miningBoost2x),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildQuickActionsGrid(BuildContext context) {
-    final actions = <_QuickActionData>[
-      _QuickActionData(
-        title: 'Watch Ads',
-        subtitle: '+50 ${TokenConfig.coinSymbol} / Ad',
-        icon: Icons.smart_display,
-        color: AppColors.goldBright,
-        onTap: () => _launchAd(context, AdPlacement.watchAndEarn),
-      ),
-      _QuickActionData(
-        title: '1B Airdrop',
-        subtitle: 'Check Eligibility',
-        icon: Icons.rocket_launch,
-        color: AppColors.cyan,
-        onTap: () => onNavigateTab(1),
-      ),
-      _QuickActionData(
-        title: 'Daily Offers',
-        subtitle: 'Streaks & Tasks',
-        icon: Icons.card_giftcard,
-        color: AppColors.violetBright,
-        onTap: () => onNavigateTab(2),
-      ),
-      _QuickActionData(
-        title: 'Refer & Earn',
-        subtitle: '15% Team Bonus',
-        icon: Icons.group_add,
-        color: AppColors.success,
-        onTap: () => onNavigateTab(3),
-      ),
-    ];
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final scaledFont = MediaQuery.textScalerOf(context).scale(14.5);
-        final singleColumn = constraints.maxWidth < 340 || scaledFont >= 22;
-
-        if (singleColumn) {
-          return Column(
-            children: actions
-                .map(
-                  (item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: _QuickActionCard(item: item),
-                  ),
-                )
-                .toList(),
-          );
-        }
-
-        return Column(
-          children: <Widget>[
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  Expanded(child: _QuickActionCard(item: actions[0])),
-                  const SizedBox(width: 12),
-                  Expanded(child: _QuickActionCard(item: actions[1])),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  Expanded(child: _QuickActionCard(item: actions[2])),
-                  const SizedBox(width: 12),
-                  Expanded(child: _QuickActionCard(item: actions[3])),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   Widget _buildEarningsBreakdownCard(BuildContext context) {
     final state = viewModel.state;
     return GlassCard(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Semantics(
             header: true,
             child: const Text(
-              'Your Earning Sources',
+              'Earnings Summary',
               style: TextStyle(
                 fontWeight: FontWeight.w700,
-                fontSize: 15.5,
+                fontSize: 15,
                 color: AppColors.textPrimary,
               ),
             ),
@@ -522,7 +500,7 @@ class HomeScreen extends StatelessWidget {
                 color: AppColors.cyan,
               ),
               _BreakdownStat(
-                label: 'Watch Ads',
+                label: 'Ads',
                 value:
                     AppFormatters.formatTokens(state.adEarnedVtx, decimals: 0),
                 color: AppColors.goldBright,
@@ -548,14 +526,8 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _launchAd(BuildContext context, AdPlacement placement) async {
-    final result = await showRewardedAdDialog(
-      context: context,
-      adsService: viewModel.repository.adsService,
-      placement: placement,
-    );
-    if (result == null || !context.mounted) return;
-    final outcome = await viewModel.claimAdReward(result);
+  Future<void> _watchAd(BuildContext context, AdPlacement placement) async {
+    final outcome = await viewModel.watchAd(placement);
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(outcome.message)),
@@ -563,69 +535,15 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-class _QuickActionCard extends StatelessWidget {
-  const _QuickActionCard({required this.item});
-
-  final _QuickActionData item;
-
-  @override
-  Widget build(BuildContext context) {
-    return GlassCard(
-      padding: const EdgeInsets.all(14),
-      semanticLabel: '${item.title}, ${item.subtitle}',
-      onTap: item.onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
-          ExcludeSemantics(
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: item.color.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(item.icon, color: item.color, size: 20),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                item.title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14.5,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              Text(
-                item.subtitle,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _QuickActionData {
-  const _QuickActionData({
-    required this.title,
-    required this.subtitle,
+class _CircleActionData {
+  const _CircleActionData({
+    required this.label,
     required this.icon,
     required this.color,
     required this.onTap,
   });
 
-  final String title;
-  final String subtitle;
+  final String label;
   final IconData icon;
   final Color color;
   final VoidCallback onTap;

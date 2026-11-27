@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/config/token_config.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/repositories/crypto_repository.dart';
 import '../../../data/services/ads_service.dart';
 import '../../../domain/models/crypto_models.dart';
-import '../../core/widgets/ad_player_dialog.dart';
 import '../../core/widgets/vortex_widgets.dart';
 import 'offer_view_model.dart';
 
@@ -26,7 +26,7 @@ class OfferScreen extends StatelessWidget {
         final offers = viewModel.filteredOffers;
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
@@ -59,6 +59,8 @@ class OfferScreen extends StatelessWidget {
     final remainingAds =
         (TokenConfig.dailyAdWatchLimit - state.adsWatchedToday)
             .clamp(0, TokenConfig.dailyAdWatchLimit);
+    final loading = viewModel.loadingAdPlacement;
+
     return GlassCard(
       gradient: AppColors.heroCardGradient,
       borderColor: AppColors.violet.withValues(alpha: 0.45),
@@ -101,36 +103,48 @@ class OfferScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Every verified ad view rewards you instantly and strengthens project DEX liquidity.',
+            'Powered by Google AdMob — complete rewarded video ads to earn instant ${TokenConfig.coinSymbol}.',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 14),
           _AdOptionTile(
             title: 'Standard Video Ad',
-            subtitle: 'Watch a short sponsor clip',
-            rewardLabel:
-                '+${TokenConfig.standardAdReward.toInt()} ${TokenConfig.coinSymbol}',
+            subtitle: 'Watch a short rewarded video ad',
+            rewardLabel: loading == AdPlacement.watchAndEarn
+                ? 'Loading...'
+                : '+${TokenConfig.standardAdReward.toInt()} ${TokenConfig.coinSymbol}',
             icon: Icons.play_circle_fill,
             accent: AppColors.goldBright,
-            onTap: () => _watchAd(context, AdPlacement.watchAndEarn),
+            onTap: loading != null
+                ? null
+                : () => _watchAd(context, AdPlacement.watchAndEarn),
           ),
           const SizedBox(height: 10),
           _AdOptionTile(
             title: '2x Mining Speed Boost Ad',
             subtitle: 'Doubles cloud mining rate for 2 hours',
-            rewardLabel: '+25 ${TokenConfig.coinSymbol} & 2X',
+            rewardLabel: loading == AdPlacement.miningBoost2x
+                ? 'Loading...'
+                : '+25 ${TokenConfig.coinSymbol} & 2X',
             icon: Icons.bolt,
             accent: AppColors.cyan,
-            onTap: () => _watchAd(context, AdPlacement.miningBoost2x),
+            onTap: loading != null
+                ? null
+                : () => _watchAd(context, AdPlacement.miningBoost2x),
           ),
           const SizedBox(height: 10),
           _AdOptionTile(
             title: 'Mystery Ad Crate',
-            subtitle: 'Win 25 to 150 ${TokenConfig.coinSymbol} randomly',
-            rewardLabel: 'UP TO +150 ${TokenConfig.coinSymbol}',
+            subtitle:
+                'Win ${TokenConfig.mysteryAdMinReward.toInt()} to ${TokenConfig.mysteryAdMaxReward.toInt()} ${TokenConfig.coinSymbol} randomly',
+            rewardLabel: loading == AdPlacement.mysteryCrate
+                ? 'Loading...'
+                : 'UP TO +150 ${TokenConfig.coinSymbol}',
             icon: Icons.auto_awesome,
             accent: AppColors.violetBright,
-            onTap: () => _watchAd(context, AdPlacement.mysteryCrate),
+            onTap: loading != null
+                ? null
+                : () => _watchAd(context, AdPlacement.mysteryCrate),
           ),
         ],
       ),
@@ -272,7 +286,7 @@ class OfferScreen extends StatelessWidget {
     final filters = <(OfferFilter, String)>[
       (OfferFilter.all, 'All Offers'),
       (OfferFilter.social, 'Social'),
-      (OfferFilter.partner, 'Partners'),
+      (OfferFilter.partner, 'Web3 Setup'),
       (OfferFilter.ads, 'Video Tasks'),
     ];
     return SingleChildScrollView(
@@ -402,13 +416,7 @@ class OfferScreen extends StatelessWidget {
                         accentColor: AppColors.goldBright,
                         semanticLabel:
                             '${offer.actionLabel} for ${offer.title} (+${offer.reward.toInt()} ${TokenConfig.coinSymbol})',
-                        onPressed: () async {
-                          final res = await viewModel.completeOffer(offer.id);
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(res.message)),
-                          );
-                        },
+                        onPressed: () => _handleOfferTap(context, offer),
                       ),
                   ],
                 ),
@@ -420,14 +428,23 @@ class OfferScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _watchAd(BuildContext context, AdPlacement placement) async {
-    final result = await showRewardedAdDialog(
-      context: context,
-      adsService: viewModel.repository.adsService,
-      placement: placement,
+  Future<void> _handleOfferTap(BuildContext context, EarnOffer offer) async {
+    final url = offer.actionUrl;
+    if (url != null && url.isNotEmpty) {
+      final uri = Uri.tryParse(url);
+      if (uri != null) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    }
+    final res = await viewModel.completeOffer(offer.id);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(res.message)),
     );
-    if (result == null || !context.mounted) return;
-    final outcome = await viewModel.claimWatchedAd(result);
+  }
+
+  Future<void> _watchAd(BuildContext context, AdPlacement placement) async {
+    final outcome = await viewModel.watchAd(placement);
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(outcome.message)),
@@ -450,7 +467,7 @@ class _AdOptionTile extends StatelessWidget {
   final String rewardLabel;
   final IconData icon;
   final Color accent;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
